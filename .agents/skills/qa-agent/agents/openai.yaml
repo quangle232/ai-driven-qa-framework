@@ -1,0 +1,4 @@
+interface:
+  display_name: "QA Automation Agent"
+  short_description: "Generate QA cases and Playwright automation"
+  default_prompt: "Use $qa-agent to generate QA test cases and Playwright automation from this Jira story."

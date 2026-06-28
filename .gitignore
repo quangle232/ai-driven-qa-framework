@@ -1,0 +1,19 @@
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+.auth/
+/test-output/
+.playwright-mcp
+.claude/worktrees/
+.claude/settings.local.json
+.agents/worktrees/
+.agents/settings.local.json
+.DS_Store
+
+# AI QA Agent runtime outputs (deterministic events, diagnosis, notifications)
+/test-output/ai/
+.aiqa-cache/

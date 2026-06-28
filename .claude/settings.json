@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn typecheck *)",
+      "Bash(yarn aiqa:diagnose *)",
+      "mcp__playwright__browser_snapshot"
+    ]
+  }
+}

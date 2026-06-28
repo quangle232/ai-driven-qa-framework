@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Framework Capabilities</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #eef2f6;
+    display: flex;
+    justify-content: center;
+    padding: 26px;
+  }
+  .canvas {
+    width: 1560px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 30px 36px 34px;
+  }
+
+  /* header */
+  .title { font-size: 26px; font-weight: 800; color: #0f172a;
+           text-align: center; letter-spacing: -.4px; }
+  .subtitle { font-size: 13px; color: #64748b;
+              text-align: center; margin-top: 6px; }
+
+  /* grid 4 × 3 */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 22px;
+  }
+
+  /* card */
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-top: 4px solid var(--accent, #94a3b8);
+    border-radius: 12px;
+    padding: 14px 16px 12px;
+    box-shadow: 0 5px 16px rgba(15, 23, 42, .06);
+    display: flex; flex-direction: column; gap: 7px;
+    min-height: 198px;
+  }
+  .card-head { display: flex; align-items: center; gap: 9px; }
+  .icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 14%, #fff);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex: 0 0 32px;
+  }
+  .card-title {
+    font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.22;
+  }
+  .card-body {
+    font-size: 11.5px; color: #334155; line-height: 1.5;
+  }
+  .card-body code {
+    background: #f1f5f9; color: #0f172a; padding: 1px 5px;
+    border-radius: 4px; font-size: 10.5px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+  }
+  .card-tag {
+    margin-top: auto; font-size: 10px; font-weight: 700;
+    color: var(--accent); letter-spacing: .25px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: color-mix(in srgb, var(--accent) 10%, #fff);
+    padding: 3px 7px; border-radius: 6px; align-self: flex-start;
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, #fff);
+  }
+
+  /* footer */
+  .footer {
+    margin-top: 22px;
+    background: #0f172a;
+    color: #cbd5e1;
+    border-radius: 12px;
+    padding: 13px 20px;
+    text-align: center;
+    font-size: 12.5px;
+    border-left: 6px solid #f59e0b;
+  }
+  .footer b { color: #fde68a; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="title">Framework Capabilities</div>
+  <div class="subtitle">
+    MyApp Automated Testing &nbsp;·&nbsp; Playwright + TypeScript &nbsp;·&nbsp;
+    Page Object Model &nbsp;·&nbsp; Jenkins CI
+  </div>
+
+  <div class="grid">
+
+    <!-- ROW 1 — test framework foundation -->
+
+    <div class="card" style="--accent:#7c3aed;">
+      <div class="card-head">
+        <div class="icon">🔐</div>
+        <div class="card-title">Login Once · Reuse Everywhere</div>
+      </div>
+      <div class="card-body">
+        Sign in ONCE per build in <code>global-setup</code>, save
+        <code>storageState</code> to disk. Every test &amp; every worker
+        reuses it — <b>no per-test login</b>, <b>no daily session-limit
+        spam</b> on the SUT. <code>refresh=yes</code> only when needed; warms
+        Desk + CRM in one pass.
+      </div>
+      <div class="card-tag">helper/authenticate-set-up.ts</div>
+    </div>
+
+    <div class="card" style="--accent:#3b82f6;">
+      <div class="card-head">
+        <div class="icon">📦</div>
+        <div class="card-title">Page Object Model</div>
+      </div>
+      <div class="card-body">
+        One class per screen, all extend <code>BasePage</code>. Locators
+        grouped in <code>fields</code> / <code>locators</code>; methods are
+        page actions. A UI change is fixed in exactly one class.
+      </div>
+      <div class="card-tag">page-objects/</div>
+    </div>
+
+    <div class="card" style="--accent:#06b6d4;">
+      <div class="card-head">
+        <div class="icon">⚙️</div>
+        <div class="card-title">Single Keyword Layer</div>
+      </div>
+      <div class="card-body">
+        <code>ActionKeyword</code> is the only layer that calls Playwright.
+        Self-healing locators (<code>data-zcqa</code> → <code>data-test-id</code>),
+        iframe + <b>reload-poll</b> for async the SUT values, async-safe getters.
+      </div>
+      <div class="card-tag">helper/action-keywords.ts</div>
+    </div>
+
+    <div class="card" style="--accent:#f59e0b;">
+      <div class="card-head">
+        <div class="icon">🪶</div>
+        <div class="card-title">Stakeholder-Friendly Errors</div>
+      </div>
+      <div class="card-body">
+        Playwright timeouts → plain English: <i>“Step failed: could not click
+        option <b>"Demolition Request"</b> — not visible within 15s.”</i>
+        Raw selector kept on a second line as a debug hint.
+      </div>
+      <div class="card-tag">friendlyLabel / friendlyWait</div>
+    </div>
+
+    <!-- ROW 2 — runtime / execution config -->
+
+    <div class="card" style="--accent:#ec4899;">
+      <div class="card-head">
+        <div class="icon">⚡</div>
+        <div class="card-title">Parallel Execution</div>
+      </div>
+      <div class="card-body">
+        Playwright <b><code>--workers 1–10</code></b> (Jenkins choice) runs
+        tests concurrently across browser contexts. All workers share the
+        same <code>storageState</code> → already-logged-in, <b>zero extra
+        logins</b> even with 10 parallel browsers. Build time drops 5–10×.
+      </div>
+      <div class="card-tag">WORKERS · config/playwright.config.ts</div>
+    </div>
+
+    <div class="card" style="--accent:#64748b;">
+      <div class="card-head">
+        <div class="icon">👻</div>
+        <div class="card-title">Headless by Default</div>
+      </div>
+      <div class="card-body">
+        On CI, <b>headless = default</b> (<code>CI=true</code>) — faster, no
+        display server needed, perfect for parallel workers. Local /
+        Jenkins <code>HEADED</code> param flips to headed when debugging.
+        <code>global-setup</code> stays headed so 2FA / OTP can be done
+        manually if the SUT prompts.
+      </div>
+      <div class="card-tag">HEADED · CI · use.headless</div>
+    </div>
+
+    <div class="card" style="--accent:#10b981;">
+      <div class="card-head">
+        <div class="icon">🌐</div>
+        <div class="card-title">Multi-environment Runs</div>
+      </div>
+      <div class="card-body">
+        <code>cross-env test_env=sandbox|uat</code> + <code>dotenv</code>
+        load per-env URLs, credentials, sandbox IDs. Same suite runs against
+        any environment without code changes.
+      </div>
+      <div class="card-tag">environments/.env.&lt;env&gt;</div>
+    </div>
+
+    <div class="card" style="--accent:#14b8a6;">
+      <div class="card-head">
+        <div class="icon">🎞️</div>
+        <div class="card-title">Trace · Video · Screenshot</div>
+      </div>
+      <div class="card-body">
+        On failure Playwright auto-retains <code>trace.zip</code> +
+        <code>video.webm</code> + <code>screenshot.png</code>. Open the
+        trace in Playwright Inspector → step-by-step time-travel of the
+        failing run.
+      </div>
+      <div class="card-tag">retain-on-failure · test-results/</div>
+    </div>
+
+    <!-- ROW 3 — integration · CI · reporting -->
+
+    <div class="card" style="--accent:#6366f1;">
+      <div class="card-head">
+        <div class="icon">🐞</div>
+        <div class="card-title">Auto Bug on Failure</div>
+      </div>
+      <div class="card-body">
+        On failure: search the project for an OPEN bug with the same summary.
+        Reuse if found; otherwise create a new Bug and link it to the parent
+        user story declared by <code>setJiraStory()</code>. No spam, no
+        orphan bugs.
+      </div>
+      <div class="card-tag">helper/jira-bug-reporter.ts</div>
+    </div>
+
+    <div class="card" style="--accent:#475569;">
+      <div class="card-head">
+        <div class="icon">🏗️</div>
+        <div class="card-title">Jenkins CI Pipeline</div>
+      </div>
+      <div class="card-body">
+        Parameterized declarative pipeline: <code>BRANCH</code>,
+        <code>TAGS</code>, <code>ENV</code>, <code>INVERT_BUGS</code>,
+        <code>REFRESH_STORAGE</code>, <code>RETRIES</code>,
+        <code>WORKERS</code>, <code>HEADED</code>. Allure + artifact archive
+        built-in.
+      </div>
+      <div class="card-tag">jenkins/web-regression-job</div>
+    </div>
+
+    <div class="card" style="--accent:#d97706;">
+      <div class="card-head">
+        <div class="icon">🏷️</div>
+        <div class="card-title">Trigger by Tag &nbsp;·&nbsp; PR / CI / manual</div>
+      </div>
+      <div class="card-body">
+        <code>trigger-jenkins.js &lt;tag&gt;</code> fires the regression job
+        from any source — a dev PR pipeline, the terminal, scheduled cron.
+        <code>--no-wait</code> + <code>--status</code> for long builds (no
+        blocking poll loops). Tag == Jira label.
+      </div>
+      <div class="card-tag">trigger-jenkins.js</div>
+    </div>
+
+    <div class="card" style="--accent:#f43f5e;">
+      <div class="card-head">
+        <div class="icon">📧</div>
+        <div class="card-title">Email + Allure Report</div>
+      </div>
+      <div class="card-body">
+        Per-build HTML e-mail to stakeholders: pass/fail summary, project
+        matrix, failed-tests table, links to the Jenkins build + the
+        per-build Allure report.
+      </div>
+      <div class="card-tag">jenkins/scripts/collect-playwright-stats.js</div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Every capability is driven by the <b>same tag</b> the user story carries
+    in Jira — <code style="background:#1f2937;color:#fde68a;padding:1px 6px;border-radius:4px;">tag == Jira label</code> — so a single value links the test, the run, the bug, and the report.
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,444 @@
+// =============================================================================
+// MyApp Automated Testing - Playwright regression pipeline
+//
+// Required Jenkins plugins:
+//   - NodeJS            -> tools { nodejs }
+//   - Git Parameter     -> gitParameter(...)
+//   - Allure            -> allure(...)   (also needs an Allure Commandline tool)
+//   - Workspace Cleanup -> cleanWs()
+//   - Mailer            -> mail(...)
+//
+// TODO before first use:
+//   - set the git repository URL in the 'Checkout source code' stage
+//   - set the notification recipients in `stakeholders`
+//   - ensure a NodeJS tool named 'nodejs-25' exists (Manage Jenkins > Tools)
+// =============================================================================
+
+def stakeholders = [
+  // TODO: set the real notification recipients for this project
+  'stakeholder@example.com'
+].join(', ')
+
+pipeline {
+  agent any
+
+  tools {
+    nodejs 'nodejs-25'
+  }
+
+  environment {
+    // Run headless by default on the agent; the HEADED parameter adds --headed.
+    CI = 'true'
+  }
+
+  parameters {
+    gitParameter(
+      name: 'BRANCH',
+      type: 'PT_BRANCH',
+      defaultValue: 'origin/main',
+      branchFilter: 'origin/(.*)',
+      sortMode: 'DESCENDING_SMART',
+      selectedValue: 'DEFAULT',
+      listSize: '1',
+      description: 'Select Git branch'
+    )
+
+    choice(
+      name: 'ENVIRONMENT',
+      choices: ['sandbox', 'uat'],
+      description: 'Select test environment (loads environments/.env.<env>).'
+    )
+
+    choice(
+      name: 'TEST_FOLDER',
+      choices: ['sample', ''],
+      description: 'Folder under tests/ to run. Blank = run all tests.'
+    )
+
+    string(
+      name: 'TAGS',
+      defaultValue: '@regression',
+      trim: true,
+      description: 'Tags to run'
+    )
+
+    booleanParam(
+      name: 'INVERT_BUGS',
+      defaultValue: false,
+      description: 'Exclude tests tagged with @bugs by adding --grep-invert "@bugs"'
+    )
+
+    booleanParam(
+      name: 'HEADED',
+      defaultValue: false,
+      description: 'Run in headed mode. Unchecked = headless. A headed run needs a display on the agent.'
+    )
+
+    choice(
+      name: 'WORKERS',
+      choices: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      description: 'Number of Playwright workers'
+    )
+
+    booleanParam(
+      name: 'REFRESH_STORAGE',
+      defaultValue: true,
+      description: 'Refresh storageState authentication'
+    )
+
+    choice(
+      name: 'RETRIES',
+      choices: ['3', '1', '2', '4', '5'],
+      description: 'Retries when failing'
+    )
+  }
+
+  stages {
+    stage('Checkout source code') {
+      steps {
+        git(
+          url: 'git@github.com:trustify/ai-driven-custom-framework.git',
+          branch: params.BRANCH,
+          credentialsId: 'git'
+        )
+      }
+    }
+
+    stage('Installing Package') {
+      steps {
+        sh '''
+          yarn install --frozen-lockfile
+          npx playwright install --with-deps
+        '''
+      }
+    }
+
+    stage('Running automation test') {
+      steps {
+        script {
+          def envArg = "test_env=${params.ENVIRONMENT}"
+          def refreshArg = params.REFRESH_STORAGE ? 'refresh=yes' : 'refresh=no'
+          def folderArg = params.TEST_FOLDER?.trim() ? "tests/${params.TEST_FOLDER.trim()}" : ''
+          def grepArg = params.TAGS?.trim() ? "--grep \"${params.TAGS.trim()}\"" : ''
+          def grepInvertBugArg = params.INVERT_BUGS ? '--grep-invert "@bugs"' : ''
+          def workersArg = "--workers=${params.WORKERS}"
+          def retriesArg = params.RETRIES?.trim() ? "--retries=${params.RETRIES.trim()}" : ''
+          def headedArg = params.HEADED ? '--headed' : ''
+
+          def cmd = """
+            npx cross-env ${envArg} ${refreshArg} playwright test \
+            ${folderArg} ${grepArg} ${grepInvertBugArg} ${workersArg} \
+            ${retriesArg} ${headedArg} \
+            -c config/playwright.config.ts
+          """.trim()
+
+          echo "Running command: ${cmd}"
+
+          // Inject Jira credentials only for the test run.
+          // The Jira API token is stored in Jenkins as a "Username with password"
+          // credential (id = 'jira-api'); withCredentials binds it to env vars
+          // JIRA_EMAIL + JIRA_TOKEN and masks them in the console log.
+          // JIRA_URL + JIRA_PROJECT are not secrets, so they live inline.
+          // Proposal/demo: Jira credentials are inlined here for simplicity
+          // (no Jenkins credential store needed). The reporter
+          // (helper/jira-bug-reporter.ts) reads these from process.env first,
+          // so withEnv is enough for the Jenkins agent.
+          //
+          // For a real project: move JIRA_EMAIL + JIRA_TOKEN into Jenkins's
+          // credential store and swap this block for `withCredentials([
+          //   usernamePassword(credentialsId: 'jira-api',
+          //                    usernameVariable: 'JIRA_EMAIL',
+          //                    passwordVariable: 'JIRA_TOKEN')])`.
+          withEnv([
+            'JIRA_URL=https://your-org.atlassian.net',
+            'JIRA_EMAIL=you@example.com',
+            'JIRA_TOKEN=YOUR_API_TOKEN',
+            'JIRA_PROJECT=DP'
+          ]) {
+            catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+              sh cmd
+            }
+          }
+        }
+      }
+    }
+
+    stage('Debug Playwright Report Location') {
+      steps {
+        sh '''
+          echo "======================================"
+          echo "Jenkins Workspace"
+          echo "======================================"
+          pwd
+
+          echo ""
+          echo "======================================"
+          echo "Search playwright-report.json"
+          echo "======================================"
+          find . -name "playwright-report.json" || true
+
+          echo ""
+          echo "======================================"
+          echo "List test-output folder"
+          echo "======================================"
+          ls -la test-output || true
+
+          echo ""
+          echo "======================================"
+          echo "Directory tree (2 levels)"
+          echo "======================================"
+          find . -maxdepth 2 -type d || true
+        '''
+      }
+    }
+
+    stage('Archive Test Artifacts') {
+      steps {
+        archiveArtifacts artifacts: 'test-output/**/*', allowEmptyArchive: true, fingerprint: false
+      }
+    }
+
+    stage('Collect Test Stats') {
+      steps {
+        script {
+          def reportPath = 'test-output/playwright-report.json'
+
+          if (!fileExists(reportPath)) {
+            echo 'No Playwright report found'
+
+            env.PW_PROJECT_TABLE = '<p>No test results found</p>'
+            env.PW_FAILED_TABLE = '<p>No failed test cases found</p>'
+            env.PW_MATRIX_TABLE = '<p>No test results found</p>'
+
+            env.PW_PASSED = '0'
+            env.PW_FAILED = '0'
+            env.PW_SKIPPED = '0'
+            env.PW_FLAKY = '0'
+            env.PW_UNSTABLE = '0'
+            env.PW_TOTAL = '0'
+            env.PW_RATE = '0%'
+          } else {
+            def statsJson = sh(
+              script: "REPORT_PATH='${reportPath}' node jenkins/scripts/collect-playwright-stats.js",
+              returnStdout: true
+            ).trim()
+
+            def stats = new groovy.json.JsonSlurperClassic().parseText(statsJson)
+
+            env.PW_PROJECT_TABLE = stats.projectTable ?: '<p>No test results found</p>'
+            env.PW_FAILED_TABLE = stats.failedTable ?: '<p>No failed or flaky test cases found</p>'
+            env.PW_MATRIX_TABLE = stats.matrixTable ?: '<p>No test results found</p>'
+
+            env.PW_PASSED = "${stats.totalPassed ?: 0}"
+            env.PW_FAILED = "${stats.totalFailed ?: 0}"
+            env.PW_SKIPPED = "${stats.totalSkipped ?: 0}"
+            env.PW_FLAKY = "${stats.totalFlaky ?: 0}"
+            env.PW_UNSTABLE = "${stats.totalUnstable ?: 0}"
+            env.PW_TOTAL = "${stats.total ?: 0}"
+            env.PW_RATE = "${stats.passRate ?: '0%'}"
+          }
+        }
+      }
+    }
+
+    stage('Publish Allure Report') {
+      steps {
+        script {
+          allure([
+            includeProperties: false,
+            jdk: '',
+            properties: [],
+            reportBuildPolicy: 'ALWAYS',
+            results: [[path: 'test-output/allure-results']]
+          ])
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      mail(
+        subject: "[PASS] ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        mimeType: 'text/html',
+        to: stakeholders,
+        body: """
+          <p><b>Status:</b> <span style="color:green;">PASS</span></p>
+          <p><b>Branch:</b> ${params.BRANCH}</p>
+          <p><b>Environment:</b> ${params.ENVIRONMENT}</p>
+          <p><b>Refresh storage:</b> ${params.REFRESH_STORAGE ? 'yes' : 'no'}</p>
+          <p><b>Invert bugs:</b> ${params.INVERT_BUGS ? 'yes' : 'no'}</p>
+          <p><b>Headed:</b> ${params.HEADED ? 'yes' : 'no'}</p>
+          <p><b>Workers:</b> ${params.WORKERS}</p>
+          <p><b>Tags:</b> ${params.TAGS}</p>
+
+          ${env.PW_PROJECT_TABLE}
+
+          <br>
+
+          <h3>Overall Result</h3>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%;">
+            <tr style="background:#f2f2f2;">
+              <th>Passed</th>
+              <th>Failed</th>
+              <th>Flaky</th>
+              <th>Unstable</th>
+              <th>Skipped</th>
+              <th>Total</th>
+              <th>Pass Rate</th>
+            </tr>
+            <tr>
+              <td align="center" style="color:green;"><b>${env.PW_PASSED}</b></td>
+              <td align="center" style="color:red;"><b>${env.PW_FAILED}</b></td>
+              <td align="center" style="color:#d97706;"><b>${env.PW_FLAKY}</b></td>
+              <td align="center" style="color:#9333ea;"><b>${env.PW_UNSTABLE}</b></td>
+              <td align="center" style="color:gray;"><b>${env.PW_SKIPPED}</b></td>
+              <td align="center">${env.PW_TOTAL}</td>
+              <td align="center"><b>${env.PW_RATE}</b></td>
+            </tr>
+          </table>
+
+          <br>
+
+          ${env.PW_FAILED_TABLE}
+
+          <br>
+
+          <h3>Executed Test Matrix</h3>
+          ${env.PW_MATRIX_TABLE}
+
+          <br>
+
+          <p>
+            <a href='${env.BUILD_URL}'>Jenkins Build</a> |
+            <a href='${env.BUILD_URL}allure/'>Allure Report</a>
+          </p>
+        """
+      )
+    }
+
+    failure {
+      mail(
+        subject: "[FAILURE] ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        mimeType: 'text/html',
+        to: stakeholders,
+        body: """
+          <p><b>Status:</b> <span style="color:red;">FAILURE</span></p>
+          <p><b>Branch:</b> ${params.BRANCH}</p>
+          <p><b>Environment:</b> ${params.ENVIRONMENT}</p>
+          <p><b>Refresh storage:</b> ${params.REFRESH_STORAGE ? 'yes' : 'no'}</p>
+          <p><b>Invert bugs:</b> ${params.INVERT_BUGS ? 'yes' : 'no'}</p>
+          <p><b>Headed:</b> ${params.HEADED ? 'yes' : 'no'}</p>
+          <p><b>Workers:</b> ${params.WORKERS}</p>
+          <p><b>Tags:</b> ${params.TAGS}</p>
+
+          ${env.PW_PROJECT_TABLE}
+
+          <br>
+
+          <h3>Overall Result</h3>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%;">
+            <tr style="background:#f2f2f2;">
+              <th>Passed</th>
+              <th>Failed</th>
+              <th>Flaky</th>
+              <th>Unstable</th>
+              <th>Skipped</th>
+              <th>Total</th>
+              <th>Pass Rate</th>
+            </tr>
+            <tr>
+              <td align="center" style="color:green;"><b>${env.PW_PASSED}</b></td>
+              <td align="center" style="color:red;"><b>${env.PW_FAILED}</b></td>
+              <td align="center" style="color:#d97706;"><b>${env.PW_FLAKY}</b></td>
+              <td align="center" style="color:#9333ea;"><b>${env.PW_UNSTABLE}</b></td>
+              <td align="center" style="color:gray;"><b>${env.PW_SKIPPED}</b></td>
+              <td align="center">${env.PW_TOTAL}</td>
+              <td align="center"><b>${env.PW_RATE}</b></td>
+            </tr>
+          </table>
+
+          <br>
+
+          ${env.PW_FAILED_TABLE}
+
+          <br>
+
+          <h3>Executed Test Matrix</h3>
+          ${env.PW_MATRIX_TABLE}
+
+          <br>
+
+          <p>
+            <a href='${env.BUILD_URL}'>Jenkins Build</a> |
+            <a href='${env.BUILD_URL}allure/'>Allure Report</a>
+          </p>
+        """
+      )
+    }
+
+    unstable {
+      mail(
+        subject: "[UNSTABLE] ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        mimeType: 'text/html',
+        to: stakeholders,
+        body: """
+          <p><b>Status:</b> <span style="color:#d4a017;">UNSTABLE</span></p>
+          <p><b>Branch:</b> ${params.BRANCH}</p>
+          <p><b>Environment:</b> ${params.ENVIRONMENT}</p>
+          <p><b>Refresh storage:</b> ${params.REFRESH_STORAGE ? 'yes' : 'no'}</p>
+          <p><b>Invert bugs:</b> ${params.INVERT_BUGS ? 'yes' : 'no'}</p>
+          <p><b>Headed:</b> ${params.HEADED ? 'yes' : 'no'}</p>
+          <p><b>Workers:</b> ${params.WORKERS}</p>
+          <p><b>Tags:</b> ${params.TAGS}</p>
+
+          ${env.PW_PROJECT_TABLE}
+
+          <br>
+
+          <h3>Overall Result</h3>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%;">
+            <tr style="background:#f2f2f2;">
+              <th>Passed</th>
+              <th>Failed</th>
+              <th>Flaky</th>
+              <th>Unstable</th>
+              <th>Skipped</th>
+              <th>Total</th>
+              <th>Pass Rate</th>
+            </tr>
+            <tr>
+              <td align="center" style="color:green;"><b>${env.PW_PASSED}</b></td>
+              <td align="center" style="color:red;"><b>${env.PW_FAILED}</b></td>
+              <td align="center" style="color:#d97706;"><b>${env.PW_FLAKY}</b></td>
+              <td align="center" style="color:#9333ea;"><b>${env.PW_UNSTABLE}</b></td>
+              <td align="center" style="color:gray;"><b>${env.PW_SKIPPED}</b></td>
+              <td align="center">${env.PW_TOTAL}</td>
+              <td align="center"><b>${env.PW_RATE}</b></td>
+            </tr>
+          </table>
+
+          <br>
+
+          ${env.PW_FAILED_TABLE}
+
+          <br>
+
+          <h3>Executed Test Matrix</h3>
+          ${env.PW_MATRIX_TABLE}
+
+          <br>
+
+          <p>
+            <a href='${env.BUILD_URL}'>Jenkins Build</a> |
+            <a href='${env.BUILD_URL}allure/'>Allure Report</a>
+          </p>
+        """
+      )
+    }
+
+    always {
+      cleanWs()
+    }
+  }
+}

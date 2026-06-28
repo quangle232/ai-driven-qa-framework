@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "rootDir": ".",
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/ai-qa-agent/**/*.ts",
+    "mcp/**/*.ts"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "_comment": "Project MCP servers for Claude Code (and any MCP client). Paths are relative to the repo root. If your client needs an absolute cwd, regenerate with `yarn aiqa:mcp:config --out=.mcp.json`. Servers are read-only by default; flip AIQA_ALLOW_* to enable writes/execution.",
+  "mcpServers": {
+    "aiqa-qa-report": {
+      "command": "npx",
+      "args": ["tsx", "mcp/servers/qa-report/server.ts"],
+      "env": { "AIQA_ALLOW_MEMORY_WRITE": "false", "AIQA_ALLOW_EXEC": "false" }
+    },
+    "aiqa-framework-context": {
+      "command": "npx",
+      "args": ["tsx", "mcp/servers/framework-context/server.ts"],
+      "env": { "AIQA_ALLOW_MEMORY_WRITE": "false", "AIQA_ALLOW_EXEC": "false" }
+    },
+    "aiqa-memory": {
+      "command": "npx",
+      "args": ["tsx", "mcp/servers/memory/server.ts"],
+      "env": { "AIQA_ALLOW_MEMORY_WRITE": "false", "AIQA_ALLOW_EXEC": "false" }
+    },
+    "aiqa-test-runner": {
+      "command": "npx",
+      "args": ["tsx", "mcp/servers/test-runner/server.ts"],
+      "env": { "AIQA_ALLOW_MEMORY_WRITE": "false", "AIQA_ALLOW_EXEC": "false" }
+    }
+  }
+}

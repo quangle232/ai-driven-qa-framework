@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Regression Execution Flow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #eef2f6;
+    display: flex;
+    justify-content: center;
+    padding: 26px;
+  }
+  .canvas {
+    width: 1280px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 30px 40px 34px;
+  }
+
+  /* header */
+  .title { font-size: 26px; font-weight: 800; color: #0f172a; text-align: center; letter-spacing: -.4px; }
+  .subtitle { font-size: 13px; color: #64748b; text-align: center; margin-top: 6px; }
+
+  .seclabel {
+    font-size: 10.5px; font-weight: 800; letter-spacing: 1.6px;
+    color: #94a3b8; text-transform: uppercase; text-align: center;
+  }
+
+  /* connectors */
+  .v-arrow { width: 2.5px; height: 22px; background: #cbd5e1; margin: 6px auto; position: relative; }
+  .v-arrow::after {
+    content: ""; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: #cbd5e1;
+  }
+
+  /* trigger row */
+  .trigger { display: flex; gap: 22px; justify-content: center; margin-top: 6px; }
+  .pill {
+    background: #fff; border: 1.6px solid #f59e0b; color: #b45309;
+    font-weight: 700; font-size: 13.5px; padding: 10px 22px; border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(245,158,11,.15);
+  }
+
+  /* main 3-column row */
+  .main { display: flex; align-items: stretch; gap: 0; margin-top: 4px; }
+  .panel {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    box-shadow: 0 5px 16px rgba(15,23,42,.07); overflow: hidden; flex: 1;
+  }
+  .panel-head {
+    color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; padding: 10px 16px;
+  }
+  .panel-body { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+
+  /* small item boxes */
+  .item {
+    background: #f8fafc; border: 1px solid #e8edf3; border-radius: 9px;
+    padding: 9px 12px; border-left: 5px solid #cbd5e1;
+  }
+  .item .it-title { font-size: 13px; font-weight: 700; color: #1e293b; }
+  .item .it-sub { font-size: 11.5px; color: #64748b; margin-top: 2px; line-height: 1.4; }
+
+  /* horizontal connectors */
+  .h-conn {
+    width: 38px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .h-line { width: 100%; height: 2.5px; background: #cbd5e1; position: relative; }
+  .h-line.to-right::after {
+    content: ""; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+    border: 6px solid transparent; border-left-color: #cbd5e1;
+  }
+
+  /* report row */
+  .reporting { display: flex; gap: 22px; justify-content: center; margin-top: 4px; }
+  .rcard {
+    width: 332px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    border-top: 4px solid #6366f1; padding: 13px 16px;
+    box-shadow: 0 4px 12px rgba(15,23,42,.07);
+  }
+  .rcard .r-title { font-size: 13.5px; font-weight: 800; color: #0f172a; }
+  .rcard .r-sub { font-size: 11.5px; color: #64748b; margin-top: 4px; line-height: 1.45; }
+
+  /* result row */
+  .results { display: flex; gap: 24px; justify-content: center; margin-top: 4px; }
+  .result {
+    width: 332px; padding: 12px 18px; border-radius: 12px;
+    font-weight: 800; font-size: 14px; text-align: center;
+    border: 1.6px solid; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .result .r-sub { font-size: 11px; font-weight: 600; opacity: .85; }
+  .result.ok    { background: #f0fdf4; border-color: #10b981; color: #065f46; }
+  .result.warn  { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+  .result.fail  { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="title">Regression Execution Flow</div>
+  <div class="subtitle">
+    End-to-end run on Jenkins &nbsp;·&nbsp; trigger → setup → tests → report
+  </div>
+
+  <div class="v-arrow" style="margin-top:16px;"></div>
+  <div class="seclabel">Run Trigger</div>
+  <div class="trigger">
+    <div class="pill">qa-agent script</div>
+    <div class="pill">Jenkins Pipeline</div>
+    <div class="pill">Scheduled / cron</div>
+  </div>
+  <div class="v-arrow"></div>
+
+  <!-- 3-column main row: Checkout · Global Setup · Test Run -->
+  <div class="main">
+
+    <!-- 1. Checkout + Install -->
+    <div class="panel">
+      <div class="panel-head" style="background:#10b981;">1 &nbsp;·&nbsp; Checkout &amp; Install</div>
+      <div class="panel-body">
+        <div class="item" style="border-left-color:#10b981;">
+          <div class="it-title">git checkout BRANCH</div>
+          <div class="it-sub">fetch latest code at the chosen branch</div>
+        </div>
+        <div class="item" style="border-left-color:#10b981;">
+          <div class="it-title">yarn install</div>
+          <div class="it-sub">install Node deps for this build</div>
+        </div>
+        <div class="item" style="border-left-color:#10b981;">
+          <div class="it-title">npx playwright install</div>
+          <div class="it-sub">ensure browsers are present</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-conn"><div class="h-line to-right"></div></div>
+
+    <!-- 2. Global Setup (auth) -->
+    <div class="panel">
+      <div class="panel-head" style="background:#7c3aed;">2 &nbsp;·&nbsp; Global Setup &nbsp;·&nbsp; one-time auth</div>
+      <div class="panel-body">
+        <div class="item" style="border-left-color:#7c3aed;">
+          <div class="it-title">Sign in to the SUT</div>
+          <div class="it-sub">headed Chromium — handles 2FA / OTP if asked</div>
+        </div>
+        <div class="item" style="border-left-color:#7c3aed;">
+          <div class="it-title">Open Desk Sandbox</div>
+          <div class="it-sub">verify "Sandbox Mode" badge is visible</div>
+        </div>
+        <div class="item" style="border-left-color:#a78bfa;">
+          <div class="it-title">Warm CRM session</div>
+          <div class="it-sub">"Verify your identity" → password → Confirm</div>
+        </div>
+        <div class="item" style="border-left-color:#a78bfa;">
+          <div class="it-title">💾 Save storageState</div>
+          <div class="it-sub">.auth/storage-state.json (Desk + CRM)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-conn"><div class="h-line to-right"></div></div>
+
+    <!-- 3. Test Run -->
+    <div class="panel">
+      <div class="panel-head" style="background:#06b6d4;">3 &nbsp;·&nbsp; Test Run &nbsp;·&nbsp; reuses storageState</div>
+      <div class="panel-body">
+        <div class="item" style="border-left-color:#06b6d4;">
+          <div class="it-title">playwright test --grep TAGS</div>
+          <div class="it-sub">each test starts already-logged-in (no per-test login)</div>
+        </div>
+        <div class="item" style="border-left-color:#06b6d4;">
+          <div class="it-title">Spec → POM → ActionKeyword</div>
+          <div class="it-sub">→ Playwright → Chromium → the SUT</div>
+        </div>
+        <div class="item" style="border-left-color:#0ea5e9;">
+          <div class="it-title">test.step + expect.soft · retry × 3</div>
+          <div class="it-sub">on failure: friendly error + screenshot + trace + video</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="v-arrow"></div>
+
+  <!-- 4. Reporting -->
+  <div class="seclabel">4 · Reporting &amp; CI Feedback</div>
+  <div class="reporting">
+    <div class="rcard" style="border-top-color:#6366f1;">
+      <div class="r-title">Playwright Report</div>
+      <div class="r-sub">HTML &amp; JSON — trace, screenshot &amp; video retained on failure</div>
+    </div>
+    <div class="rcard" style="border-top-color:#10b981;">
+      <div class="r-title">Allure Report</div>
+      <div class="r-sub">Interactive report · single-file HTML · per-build link</div>
+    </div>
+    <div class="rcard" style="border-top-color:#f59e0b;">
+      <div class="r-title">Jenkins E-mail</div>
+      <div class="r-sub">Pass / fail summary &amp; matrix · built by collect-playwright-stats.js</div>
+    </div>
+  </div>
+
+  <div class="v-arrow"></div>
+
+  <!-- 5. Result -->
+  <div class="seclabel">5 · Build Result</div>
+  <div class="results">
+    <div class="result ok">
+      ✅ SUCCESS
+      <div class="r-sub">all selected tests passed</div>
+    </div>
+    <div class="result warn">
+      ⚠️ UNSTABLE
+      <div class="r-sub">only @bugs (known defects) failed</div>
+    </div>
+    <div class="result fail">
+      ❌ FAILURE
+      <div class="r-sub">real test fail OR global-setup error</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

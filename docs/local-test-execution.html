@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Local Test Execution — Single test lifecycle</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #eef2f6;
+    display: flex;
+    justify-content: center;
+    padding: 26px;
+  }
+  .canvas {
+    width: 1280px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 30px 40px 34px;
+  }
+
+  /* header */
+  .title { font-size: 26px; font-weight: 800; color: #0f172a; text-align: center; letter-spacing: -.4px; }
+  .subtitle { font-size: 13px; color: #64748b; text-align: center; margin-top: 6px; }
+
+  .seclabel {
+    font-size: 10.5px; font-weight: 800; letter-spacing: 1.6px;
+    color: #94a3b8; text-transform: uppercase; text-align: center;
+  }
+
+  /* vertical arrow */
+  .v-arrow { width: 2.5px; height: 22px; background: #cbd5e1; margin: 6px auto; position: relative; }
+  .v-arrow::after {
+    content: ""; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: #cbd5e1;
+  }
+  .v-arrow.lg { height: 30px; }
+
+  /* CLI command box */
+  .cli {
+    background: #0f172a; color: #f8fafc; border-radius: 12px;
+    padding: 14px 22px; text-align: left; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 14px; border-left: 6px solid #f59e0b;
+    box-shadow: 0 6px 16px rgba(15,23,42,.20);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .cli .prompt { color: #94a3b8; }
+  .cli .cmd    { color: #fde68a; }
+  .cli .lbl    { background: #f59e0b; color: #1c1917; font-weight: 800; font-size: 11px;
+                 padding: 4px 10px; border-radius: 5px; letter-spacing: .6px;
+                 font-family: inherit; text-transform: uppercase; }
+
+  /* panel */
+  .panel {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    box-shadow: 0 5px 16px rgba(15,23,42,.07); overflow: hidden;
+  }
+  .panel-head {
+    color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; padding: 10px 16px;
+  }
+  .panel-body { padding: 14px; }
+
+  /* item */
+  .item {
+    background: #f8fafc; border: 1px solid #e8edf3; border-radius: 9px;
+    padding: 9px 12px; border-left: 5px solid #cbd5e1; margin-bottom: 8px;
+  }
+  .item:last-child { margin-bottom: 0; }
+  .item .it-title { font-size: 13px; font-weight: 700; color: #1e293b; }
+  .item .it-sub { font-size: 11.5px; color: #64748b; margin-top: 2px; line-height: 1.4;
+                  font-family: "SF Mono", Menlo, Consolas, monospace; }
+  .item .it-sub.prose { font-family: inherit; }
+
+  /* two-column row: globalSetup → storageState */
+  .two-col { display: flex; gap: 24px; align-items: stretch; margin-top: 6px; }
+  .two-col .panel { flex: 1; }
+
+  /* the storageState highlight */
+  .storage {
+    background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+    border: 2px solid #f59e0b; border-radius: 14px;
+    padding: 18px 22px; text-align: center;
+    box-shadow: 0 6px 18px rgba(245,158,11,.25);
+    display: flex; flex-direction: column; gap: 6px; justify-content: center;
+  }
+  .storage .s-icon { font-size: 30px; }
+  .storage .s-title { font-size: 16px; font-weight: 800; color: #7c2d12; }
+  .storage .s-path  { font-size: 12px; color: #9a3412;
+                      font-family: "SF Mono", Menlo, Consolas, monospace; }
+  .storage .s-tag   { display: inline-block; background: #f59e0b; color: #1c1917;
+                      font-size: 10px; font-weight: 800; letter-spacing: .8px;
+                      padding: 3px 9px; border-radius: 5px; text-transform: uppercase;
+                      align-self: center; margin-top: 4px; }
+
+  /* arrows around storageState */
+  .h-arrow {
+    width: 26px; align-self: center; flex: 0 0 26px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  }
+  .h-line { width: 100%; height: 2.5px; background: #cbd5e1; position: relative; }
+  .h-line.to-right::after {
+    content: ""; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+    border: 6px solid transparent; border-left-color: #cbd5e1;
+  }
+  .h-line.to-down::after {
+    content: ""; position: absolute; bottom: -1px; left: 50%; transform: translateY(50%);
+    border: 6px solid transparent; border-top-color: #cbd5e1;
+  }
+  .h-arrow .clabel {
+    font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: .6px;
+    text-transform: uppercase; text-align: center; line-height: 1.2;
+  }
+
+  /* lifecycle big panel — has internal hooks/test rows */
+  .lifecycle-row {
+    display: flex; gap: 10px; align-items: stretch;
+    padding: 8px 0; border-bottom: 1px dashed #e2e8f0;
+  }
+  .lifecycle-row:last-child { border-bottom: 0; }
+  .lc-label {
+    width: 160px; flex: 0 0 160px;
+    background: #eef2f6; color: #475569;
+    font-size: 11px; font-weight: 800; letter-spacing: .6px;
+    border-radius: 8px; padding: 9px 12px; text-align: center;
+    display: flex; align-items: center; justify-content: center;
+    text-transform: uppercase;
+  }
+  .lc-label.test { background: #06b6d4; color: #fff; }
+  .lc-body  { flex: 1; font-size: 12.5px; color: #1e293b; line-height: 1.55;
+              padding: 6px 4px; }
+  .lc-body .code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px;
+                   background: #f1f5f9; padding: 1px 6px; border-radius: 4px;
+                   color: #0f172a; }
+  .lc-body .note { color: #64748b; font-size: 11.5px; }
+
+  /* artifact pill row */
+  .pill-row { display: flex; gap: 18px; justify-content: center; margin-top: 4px; }
+  .pill {
+    background: #fff; border: 1.5px solid #94a3b8; color: #334155;
+    font-weight: 700; font-size: 12.5px; padding: 9px 18px; border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(15,23,42,.07);
+  }
+
+  /* afterEach branching (retry-aware fixture) */
+  .branch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .branch {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 9px 12px;
+    border-left: 4px solid var(--branch-accent, #94a3b8);
+    font-size: 11.5px;
+    color: #334155;
+    line-height: 1.5;
+  }
+  .branch .b-title {
+    font-size: 10.5px; font-weight: 800; letter-spacing: .4px;
+    text-transform: uppercase;
+    color: var(--branch-accent);
+    margin-bottom: 4px;
+  }
+  .branch .code, .lc-body .code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px;
+    background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #0f172a;
+  }
+  .lc-label.fixture { background: #7c3aed; color: #fff; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="title">Local Test Execution &nbsp;—&nbsp; Single test lifecycle</div>
+  <div class="subtitle">
+    Technical view &nbsp;·&nbsp; command-line run &nbsp;·&nbsp;
+    one <code>storageState</code> is reused by every test in the run
+  </div>
+
+  <div class="v-arrow lg" style="margin-top:18px;"></div>
+  <div class="seclabel">1 · Run from the terminal</div>
+  <div class="cli">
+    <span class="lbl">CLI</span>
+    <span class="prompt">$&nbsp;</span>
+    <span class="cmd">npx cross-env test_env=sandbox refresh=yes playwright test -c config/playwright.config.ts --grep @crm</span>
+  </div>
+
+  <div class="v-arrow"></div>
+  <div class="seclabel">2 · Playwright runner reads config/playwright.config.ts</div>
+  <div class="panel">
+    <div class="panel-head" style="background:#1e293b;">Test Runner · Config</div>
+    <div class="panel-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="item" style="border-left-color:#1e293b;">
+        <div class="it-title">use.storageState</div>
+        <div class="it-sub">.auth/storage-state.json</div>
+      </div>
+      <div class="item" style="border-left-color:#1e293b;">
+        <div class="it-title">globalSetup &nbsp;·&nbsp; globalTeardown</div>
+        <div class="it-sub prose">runs once before / after the whole suite</div>
+      </div>
+      <div class="item" style="border-left-color:#1e293b;">
+        <div class="it-title">retries · workers · timeout</div>
+        <div class="it-sub prose">parallel workers · per-test retry × 3</div>
+      </div>
+      <div class="item" style="border-left-color:#d97706;">
+        <div class="it-title">🏷️ <code style="font-size:11.5px;background:#f1f5f9;padding:1px 5px;border-radius:4px;">--grep &lt;tag&gt;</code> &nbsp;·&nbsp; test selection</div>
+        <div class="it-sub prose">only tests whose <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;">tags(...)</code> match are loaded — e.g. <b>@crm</b>, <b>@regression</b>, <b>@add-case</b>. Tag value == Jira label.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="v-arrow"></div>
+  <div class="seclabel">3 · Global Setup (runs once) → storageState</div>
+  <div class="two-col">
+    <div class="panel" style="flex:1.2;">
+      <div class="panel-head" style="background:#7c3aed;">Global Setup &nbsp;·&nbsp; one-time auth</div>
+      <div class="panel-body">
+        <div class="item" style="border-left-color:#7c3aed;">
+          <div class="it-title">helper/global-setup.ts</div>
+          <div class="it-sub">if refresh=yes OR state file missing → re-authenticate</div>
+        </div>
+        <div class="item" style="border-left-color:#7c3aed;">
+          <div class="it-title">authenticate-set-up.ts &nbsp;·&nbsp; <b>headless</b> (headed for demo / 2FA only)</div>
+          <div class="it-sub prose">
+            sign in the SUT → open Desk Sandbox → warm CRM session
+          </div>
+        </div>
+        <div class="item" style="border-left-color:#a78bfa;">
+          <div class="it-title">context.storageState({ path })</div>
+          <div class="it-sub">writes the file ⟶</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-arrow">
+      <div class="clabel">writes<br>once</div>
+      <div class="h-line to-right"></div>
+    </div>
+
+    <div class="storage" style="flex:1;">
+      <div class="s-icon">💾</div>
+      <div class="s-title">storageState</div>
+      <div class="s-path">.auth/storage-state.json</div>
+      <div class="s-path" style="margin-top:4px;">cookies · localStorage · session</div>
+      <div class="s-tag">shared by every test</div>
+    </div>
+  </div>
+
+  <div class="v-arrow lg"></div>
+  <div class="seclabel">4 · Per-test lifecycle (repeated for each test in the run)</div>
+  <div class="panel">
+    <div class="panel-head" style="background:#06b6d4;">▶︎ &nbsp; A Test Runs &nbsp;·&nbsp; opens a fresh browser context loaded with storageState</div>
+    <div class="panel-body" style="padding:6px 14px;">
+
+      <div class="lifecycle-row">
+        <div class="lc-label">Hooks · before</div>
+        <div class="lc-body">
+          <span class="code">beforeAll</span> &nbsp;→&nbsp;
+          <span class="code">beforeEach</span> &nbsp;
+          <span class="note">— set up fixtures (none required; storageState carries the session)</span>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lc-label">Open context</div>
+        <div class="lc-body">
+          new browser context with <span class="code">use.storageState</span> &nbsp;
+          <span class="note">— the page starts <strong>already logged in</strong>, no per-test login</span>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lc-label test">test() body</div>
+        <div class="lc-body">
+          <span class="code">setJiraStory('PROJ-1')</span>
+          <span class="note">— annotate the parent user story (first line of every test)</span><br>
+          then: <span class="code">test.step('Open Desk', …)</span> &nbsp;→&nbsp;
+          <span class="code">page object</span> &nbsp;→&nbsp;
+          <span class="code">ActionKeyword</span> &nbsp;→&nbsp;
+          <span class="code">Playwright</span> &nbsp;→&nbsp; the SUT
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lc-label">Assertions</div>
+        <div class="lc-body">
+          <span class="code">expect(...)</span> &nbsp; / &nbsp; <span class="code">expect.soft(...)</span>
+          chains &nbsp;
+          <span class="note">— whole chain validated in one run (soft); hard expect stops on first miss</span>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lc-label">On failure</div>
+        <div class="lc-body">
+          friendly error <span class="code">"Step failed: could not click ..."</span> &nbsp;+&nbsp;
+          screenshot, trace, video &nbsp;→&nbsp;
+          <span class="code">retry × N</span>
+          <span class="note">(N = <span class="code">test.retries</span>, default 3 per spec)</span>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lc-label fixture">afterEach<br>fixture</div>
+        <div class="lc-body">
+          <span class="code">jiraBugOnFailure</span> auto-fixture (helper/test.ts) inspects the result.
+          On <b>pass</b> → return. On <b>fail</b>, branches by attempt:
+          <div class="branch-grid">
+            <div class="branch" style="--branch-accent:#0891b2;">
+              <div class="b-title">⏳ Non-final attempt</div>
+              <code class="code">retry &lt; maxRetries</code> →
+              show a deferred step <span class="code">"Will retry (attempt N/M) — bug report deferred"</span>.
+              <b>No Jira call</b> yet.
+            </div>
+            <div class="branch" style="--branch-accent:#dc2626;">
+              <div class="b-title">🐞 Final attempt failed</div>
+              <code class="code">retry === maxRetries</code> → read <span class="code">setJiraStory</span> annotation →
+              search Jira: existing OPEN bug? <b>reuse</b> ✅ — else <b>create</b> + link to story ✅.
+              Bug key shown as a nested step.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lifecycle-row">
+        <div class="lc-label">Hooks · after</div>
+        <div class="lc-body">
+          <span class="code">afterEach</span> &nbsp;→&nbsp; <span class="code">afterAll</span>
+          &nbsp;<span class="note">— context closed; storageState file is untouched (read-only for tests)</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="v-arrow"></div>
+  <div class="seclabel">5 · Global Teardown (runs once, after all tests)</div>
+  <div class="panel">
+    <div class="panel-head" style="background:#f43f5e;">Global Teardown</div>
+    <div class="panel-body">
+      <div class="item" style="border-left-color:#f43f5e;">
+        <div class="it-title">End the auth session</div>
+        <div class="it-sub prose">
+          hit the logout endpoint so the account does not pile up active sessions
+          (the SUT caps active sessions per account — closing here keeps the next run clean)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="v-arrow"></div>
+  <div class="seclabel">6 · Local artifacts produced</div>
+  <div class="pill-row">
+    <div class="pill" style="border-color:#6366f1; color:#4338ca;">📄 Playwright HTML &nbsp;·&nbsp; test-output/html</div>
+    <div class="pill" style="border-color:#10b981; color:#047857;">📑 Allure results &nbsp;·&nbsp; test-output/allure-results</div>
+    <div class="pill" style="border-color:#f59e0b; color:#b45309;">🎞️ Traces · videos · screenshots</div>
+  </div>
+
+</div>
+</body>
+</html>
