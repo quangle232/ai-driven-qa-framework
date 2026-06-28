@@ -163,7 +163,7 @@ Playwright Test launches the selected specs with `--grep <TAGS>`:
 ### 5. Reporting
 After the run:
 - Playwright HTML report is generated into `test-output/html`.
-- `jenkins/scripts/collect-playwright-stats.js` reads
+- `ci/jenkins/scripts/collect-playwright-stats.js` reads
   `test-output/playwright-report.json` and builds the summary stats.
 - The Allure plugin publishes the per-build Allure report at
   `<build-url>/allure/`.
@@ -184,8 +184,8 @@ Jenkins ends with one of three states:
 |------|------|
 | Claude trigger script | `.claude/skills/qa-agent/scripts/trigger-jenkins.js` |
 | Codex trigger script | `.agents/skills/qa-agent/scripts/trigger-jenkins.js` |
-| Jenkins pipeline | `jenkins/web-regression-job` |
-| Stats summary for the e-mail | `jenkins/scripts/collect-playwright-stats.js` |
+| Jenkins pipeline | `ci/jenkins/regression-pipeline` |
+| Stats summary for the e-mail | `ci/jenkins/scripts/collect-playwright-stats.js` |
 | Global setup | `helper/global-setup.ts` |
 | Authentication | `helper/authenticate-set-up.ts` |
 | Desk login | `page-objects/sut/login-page.ts` |

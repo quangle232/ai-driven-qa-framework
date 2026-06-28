@@ -44,8 +44,9 @@ export const mcpPolicy: McpPolicy = {
     blockedPaths: [
         ".env",
         ".env.local",
-        ".env.sandbox",
-        ".env.uat",
+        ".env.dev",
+        ".env.test",
+        ".env.prod",
         ".env.jira",
         ".auth/",
         "storage-state",

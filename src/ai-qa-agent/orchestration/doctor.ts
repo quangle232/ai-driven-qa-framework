@@ -96,7 +96,7 @@ function checkAuthStub(): DoctorCheck {
 
 function checkEnv(): DoctorCheck[] {
     const checks: DoctorCheck[] = [];
-    const envName = process.env.test_env ?? "sandbox";
+    const envName = process.env.test_env ?? "test";
     const envFile = `environments/.env.${envName}`;
     if (!existsRel(envFile)) {
         checks.push(fail(

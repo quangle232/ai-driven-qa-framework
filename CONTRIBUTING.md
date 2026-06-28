@@ -39,7 +39,7 @@ helper/                 ← framework-provided helpers used by every project
   action-keywords.ts    ← single keyword layer; projects can extend
 
 config/                 ← playwright.config.ts (framework default; projects rarely change)
-jenkins/                ← declarative pipeline (projects customize git URL + stakeholders)
+ci/                     ← sample CI pipelines: jenkins/, github-actions/, gitlab/ (see ci/README.md)
 ```
 
 ## Adding a new MCP tool

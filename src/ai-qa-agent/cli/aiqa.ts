@@ -126,7 +126,7 @@ function printHelp(): void {
         "  --files=a,b,c            guard: explicit file list (otherwise scans tests/ and page-objects/).",
         "  --out=<path>             scan: write JSON to file instead of stdout.",
         "  --grep=<tag>             run-regression: override the default \"@regression\" grep.",
-        "  --env=<env>              run-regression: override test_env (default sandbox).",
+        "  --env=<env>              run-regression: override test_env (default test).",
         "  --workers=<n>            run-regression: pass-through to playwright.",
         "  --retries=<n>            run-regression: pass-through to playwright.",
         "  --refresh-storage        run-regression: regenerate storageState before the run.",
@@ -499,7 +499,7 @@ async function cmdDoctor(_flags: Flags): Promise<number> {
 }
 
 async function cmdInitProject(flags: Flags): Promise<number> {
-    const env = typeof flags.env === "string" ? flags.env : "sandbox";
+    const env = typeof flags.env === "string" ? flags.env : "test";
     const actions = initProject({
         env,
         appUrl: typeof flags["app-url"] === "string" ? flags["app-url"] : undefined,

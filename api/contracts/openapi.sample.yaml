@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Sample API (contract for Prism mock + contract tests)
+  version: 1.0.0
+  description: >
+    Sample OpenAPI contract. Run `yarn mock:api:prism` to serve a spec-driven
+    mock from this file. Replace with your real API spec; keep it in sync with
+    the zod schemas in api/models/ for true contract testing.
+servers:
+  - url: http://127.0.0.1:4010
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /users:
+    get:
+      summary: List users
+      operationId: listUsers
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+    post:
+      summary: Create user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateUserRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /users/{id}:
+    get:
+      summary: Get user
+      operationId: getUser
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      summary: Delete user
+      operationId: deleteUser
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: No content }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, username, email, createdAt]
+      properties:
+        id: { type: string, example: "u-1" }
+        username: { type: string, example: "demo" }
+        email: { type: string, format: email, example: "demo@example.com" }
+        createdAt: { type: string, format: date-time, example: "2026-01-01T00:00:00.000Z" }
+    CreateUserRequest:
+      type: object
+      required: [username, email]
+      properties:
+        username: { type: string, minLength: 3, example: "newbie" }
+        email: { type: string, format: email, example: "newbie@example.com" }
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, example: "demo" }
+        password: { type: string, example: "demo-pass" }
+    LoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string, example: "mock-jwt-token" }
+        user: { $ref: "#/components/schemas/User" }
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string, example: "not_found" }
+        message: { type: string, example: "User does not exist" }

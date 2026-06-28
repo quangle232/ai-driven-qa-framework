@@ -4,6 +4,11 @@ qa-agent Phase 4 can run the tests on Jenkins CI instead of (or as well as)
 locally. Because `tag == Jira label`, the Jira label taken from the user story
 is exactly the value passed to the Jenkins job's `TAGS` parameter.
 
+> The Jenkins **pipeline definition** now lives at
+> `ci/jenkins/regression-pipeline`, alongside GitHub Actions + GitLab CI
+> samples in `ci/` (see `ci/README.md`). This file is about *triggering* an
+> already-configured Jenkins job at runtime.
+
 ## Script
 `./scripts/trigger-jenkins.js <tag>` triggers the Jenkins `web-regression-job`
 via the Jenkins Remote API (`buildWithParameters`), waits for the build, and
@@ -11,7 +16,7 @@ reports the result. No MCP is required — it is a plain `fetch` call.
 
 ```
 node .claude/skills/qa-agent/scripts/trigger-jenkins.js @crm
-node .claude/skills/qa-agent/scripts/trigger-jenkins.js @crm --env=sandbox --folder=sample --branch=main
+node .claude/skills/qa-agent/scripts/trigger-jenkins.js @crm --env=test --folder=sample --branch=main
 node .claude/skills/qa-agent/scripts/trigger-jenkins.js @crm --check     # auth/connectivity only
 node .claude/skills/qa-agent/scripts/trigger-jenkins.js @crm --no-wait   # trigger, hand back build URL, exit fast
 node .claude/skills/qa-agent/scripts/trigger-jenkins.js --status=<url>   # one-shot check of an existing build

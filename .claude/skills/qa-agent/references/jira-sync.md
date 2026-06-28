@@ -65,7 +65,7 @@ Covers the **Phase 2** Jenkins build that ran the related existing tests.
 
 Description (markdown):
 - The body of the run-result email (the framework's
-  `jenkins/scripts/collect-playwright-stats.js` builds an HTML summary —
+  `ci/jenkins/scripts/collect-playwright-stats.js` builds an HTML summary —
   paste it or its plain-text form here for a nice description).
 - The **Allure report link**: `<build-url>/allure/` (Jenkins Allure plugin
   URL pattern; e.g. `http://localhost:8080/job/sample-regression-web/17/allure/`).

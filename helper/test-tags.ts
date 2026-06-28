@@ -19,6 +19,13 @@ export const TAGS = {
     P1: "@P1",
     P2: "@P2",
 
+    // surface / transport — which stack a spec exercises
+    API: "@api",
+    GRPC: "@grpc",
+    MOBILE: "@mobile",
+    MOBILE_WEB: "@mobile-web",
+    MOBILE_NATIVE: "@mobile-native",
+
     // feature — add your own here, one per Jira label.
     // Example:
     //   AUTH: "@auth",

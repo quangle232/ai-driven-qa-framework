@@ -1,0 +1,69 @@
+# =============================================================================
+# SAMPLE — GitHub Actions PR smoke gate (fast green slice on every PR)
+#
+# INERT where it sits. To activate:  cp ci/github-actions/pr-smoke.yml .github/workflows/
+#
+# Runs the @smoke green slice (excludes @bugs) on each pull request so reviewers
+# get a quick signal. Deliberately does NOT pass Jira secrets — PRs should not
+# open bug tickets. The full suite + AI-QA report run in regression.yml.
+# =============================================================================
+
+name: PR smoke (sample)
+
+on:
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-smoke-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      CI_PROVIDER: github-actions
+      test_env: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Provision env file from secrets
+        run: |
+          mkdir -p environments
+          cat > "environments/.env.${test_env}" <<EOF
+          AUTH_URL=${{ secrets.AUTH_URL }}
+          APP_URL=${{ secrets.APP_URL }}
+          APP_USER=${{ secrets.APP_USER }}
+          APP_PASS=${{ secrets.APP_PASS }}
+          EOF
+
+      - name: Run @smoke green slice
+        run: |
+          npx cross-env test_env="$test_env" playwright test \
+            -c config/playwright.config.ts \
+            --grep "@smoke" --grep-invert "@bugs" \
+            --workers=1 --retries=2
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-smoke-report-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 7
+          path: test-output/html

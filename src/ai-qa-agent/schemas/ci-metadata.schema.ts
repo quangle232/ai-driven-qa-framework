@@ -20,7 +20,7 @@ export interface CiMetadata {
     jobName: string | null;
     branch: string | null;
     commit: string | null;
-    environment: string | null;     // sandbox / uat / etc.
+    environment: string | null;     // dev / test / prod / etc.
 
     triggeredBy: string | null;
     startedAt: string | null;       // ISO-8601

@@ -14,7 +14,7 @@
  *
  * Usage:
  *   node trigger-jenkins.js <tag>
- *   node trigger-jenkins.js @crm --env=sandbox --folder=sample --branch=main
+ *   node trigger-jenkins.js @crm --env=test --folder=sample --branch=main
  *   node trigger-jenkins.js @crm --check     (auth/connectivity check only)
  *
  * Exit codes: 0 = build SUCCESS / check ok, 1 = build not SUCCESS,
@@ -156,7 +156,7 @@ if (flags.status) {
 // `origin/main` produces an invalid `origin/origin/main` ref.
 const body = new URLSearchParams({
     TAGS: tag,
-    ENVIRONMENT: flags.env || 'sandbox',
+    ENVIRONMENT: flags.env || 'test',
     TEST_FOLDER: flags.folder || 'sample',
     BRANCH: flags.branch || 'main',
 });

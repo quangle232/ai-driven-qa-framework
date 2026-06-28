@@ -52,7 +52,7 @@ function triggerTargetedRunTool(args: { grep?: string; env?: string; workers?: n
         );
     }
     const grep = args.grep ?? "@regression";
-    const env = args.env ?? process.env.test_env ?? "sandbox";
+    const env = args.env ?? process.env.test_env ?? "test";
     const cmdArgs = [
         "cross-env", `test_env=${env}`, args.refreshStorage ? "refresh=yes" : "refresh=no",
         "playwright", "test", "--grep", grep, "-c", "config/playwright.config.ts",
@@ -100,7 +100,7 @@ export const testRunnerServer = new McpServerBase({
                 type: "object",
                 properties: {
                     grep: { type: "string", description: "Tag filter (default @regression)." },
-                    env: { type: "string", description: "test_env (default sandbox)." },
+                    env: { type: "string", description: "test_env (default test)." },
                     workers: { type: "number" },
                     retries: { type: "number" },
                     refreshStorage: { type: "boolean" },

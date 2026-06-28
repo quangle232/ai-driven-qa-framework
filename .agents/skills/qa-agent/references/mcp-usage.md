@@ -46,7 +46,7 @@ Tools (prefix `mcp__playwright__`): `browser_navigate`, `browser_snapshot`,
 - Mark every selector that still needs live verification in
   `docs/ai/memory.md` "Known gaps".
 - Ask the user to run the spec locally:
-  `npx cross-env test_env=sandbox playwright test -c config/playwright.config.ts --grep <tag>`.
+  `npx cross-env test_env=test playwright test -c config/playwright.config.ts --grep <tag>`.
 - Log `Playwright MCP: skipped — <reason>`.
 
 ---

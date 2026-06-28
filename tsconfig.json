@@ -17,6 +17,9 @@
     "helper/**/*.ts",
     "page-objects/**/*.ts",
     "test-data/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "api/**/*.ts",
+    "grpc/**/*.ts",
+    "mobile/**/*.ts"
   ]
 }

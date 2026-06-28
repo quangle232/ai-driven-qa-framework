@@ -29,6 +29,9 @@ pipeline {
   environment {
     // Run headless by default on the agent; the HEADED parameter adds --headed.
     CI = 'true'
+    // Auto-detected by the AI QA Agent, set explicitly for clarity
+    // (src/ai-qa-agent/collectors/ci-metadata-collector.ts).
+    CI_PROVIDER = 'jenkins'
   }
 
   parameters {
@@ -45,7 +48,7 @@ pipeline {
 
     choice(
       name: 'ENVIRONMENT',
-      choices: ['sandbox', 'uat'],
+      choices: ['dev', 'test', 'prod'],
       description: 'Select test environment (loads environments/.env.<env>).'
     )
 
@@ -219,7 +222,7 @@ pipeline {
             env.PW_RATE = '0%'
           } else {
             def statsJson = sh(
-              script: "REPORT_PATH='${reportPath}' node jenkins/scripts/collect-playwright-stats.js",
+              script: "REPORT_PATH='${reportPath}' node ci/jenkins/scripts/collect-playwright-stats.js",
               returnStdout: true
             ).trim()
 

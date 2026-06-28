@@ -17,3 +17,8 @@ node_modules/
 # AI QA Agent runtime outputs (deterministic events, diagnosis, notifications)
 /test-output/ai/
 .aiqa-cache/
+
+# Real env files — only the *.example templates are committed.
+environments/.env.*
+!environments/.env.example
+!environments/.env.*.example

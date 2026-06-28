@@ -32,7 +32,7 @@ import { detectCriticalEvents, type CriticalEvent } from "../watchers/critical-p
 import { groupFailures } from "../analyzers/failure-grouper";
 
 export interface RegressionRunOptions {
-    /** Override env (default reads test_env or "sandbox"). */
+    /** Override env (default reads test_env or "test"). */
     env?: string;
     /** Override grep pattern (default "@regression"). */
     grep?: string;
@@ -57,7 +57,7 @@ export interface RegressionRunResult {
 }
 
 export async function runRegression(opts: RegressionRunOptions = {}): Promise<RegressionRunResult> {
-    const env = opts.env ?? process.env.test_env ?? "sandbox";
+    const env = opts.env ?? process.env.test_env ?? "test";
     const grep = opts.grep ?? "@regression";
     const pollMs = opts.pollMs ?? 2000;
     const runId = resolveRunId();

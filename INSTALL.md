@@ -28,7 +28,7 @@ npx playwright install --with-deps
 
 ```bash
 yarn aiqa:init-project \
-  --env=sandbox \
+  --env=test \
   --app-url=https://app.example.com \
   --auth-url=https://auth.example.com/signin
 ```
@@ -37,13 +37,13 @@ Optional — wire Jira:
 
 ```bash
 yarn aiqa:init-project \
-  --env=sandbox \
+  --env=test \
   --app-url=https://app.example.com \
   --jira-url=https://your-org.atlassian.net \
   --jira-project=PROJ
 ```
 
-This creates `environments/.env.sandbox` (and `environments/.env.jira` if
+This creates `environments/.env.test` (and `environments/.env.jira` if
 you passed Jira flags) from the templates. Open them and fill in any
 credentials by hand:
 
@@ -145,7 +145,7 @@ rm -rf tests/sample page-objects/sample test-data/sample-data.ts
 yarn aiqa:run-regression
 
 # Or pieces individually:
-yarn test:sandbox                           # just Playwright
+yarn test:test                              # just Playwright
 yarn aiqa:collect && yarn aiqa:diagnose     # post-run analysis
 yarn aiqa:report:html                       # stakeholder HTML
 ```
@@ -273,7 +273,7 @@ point" section in [mcp/README.md](mcp/README.md).
 
 ## CI integration
 
-The framework's Jenkins pipeline (`jenkins/regression-pipeline`) stays
+The framework's Jenkins pipeline (`ci/jenkins/regression-pipeline`) stays
 exactly as it is — the AI QA Agent's post-run analysis is opt-in. To add
 it, append this to the pipeline's `post { always { ... } }` block:
 
@@ -287,9 +287,13 @@ sh '''
 archiveArtifacts artifacts: 'test-output/ai/**/*', allowEmptyArchive: true
 ```
 
-For GitHub Actions / GitLab CI, the same four commands run in `if: always()`
-/ `when: always` blocks. The framework auto-detects the CI provider via
-env vars.
+For **GitHub Actions** and **GitLab CI**, ready-to-copy samples live in
+[`ci/`](ci/README.md): `ci/github-actions/regression.yml` (+ `pr-smoke.yml`)
+and `ci/gitlab/.gitlab-ci.yml`. They already run those four commands via
+`yarn report:all` in an `if: always()` / always-run block and set `CI_PROVIDER`
+explicitly (it is also auto-detected via env vars). Copy a sample to its active
+location (`.github/workflows/` or repo-root `.gitlab-ci.yml`) to switch it on —
+see `ci/README.md` for the cross-provider contract.
 
 ---
 
@@ -298,7 +302,7 @@ env vars.
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `yarn aiqa:doctor` says `auth-setup ⚠` | `helper/authenticate-set-up.ts` still has the example URLs | Replace the TODO block with your sign-in flow |
-| `yarn aiqa:doctor` says `env-file ✗` | `environments/.env.sandbox` missing | `yarn aiqa:init-project --env=sandbox --app-url=...` |
+| `yarn aiqa:doctor` says `env-file ✗` | `environments/.env.test` missing | `yarn aiqa:init-project --env=test --app-url=...` |
 | `yarn aiqa:generate-automation` says `provider=noop` | `ANTHROPIC_API_KEY` not set | Either set the key, or use Claude Code interactively (Mode A) |
 | Spec runs but no Jira bug created on failure | `environments/.env.jira` missing or wrong creds | Re-init with `--jira-url=... --jira-project=...` + fill in `JIRA_EMAIL` + `JIRA_TOKEN` |
 | `yarn aiqa:guard` rejects a generated spec | LLM produced non-conforming code | Either fix the file manually, or re-run `aiqa:generate-automation` (the builder has the reviewer in the loop) |
@@ -312,4 +316,5 @@ env vars.
 - [src/ai-qa-agent/README.md](src/ai-qa-agent/README.md) — agent architecture, modes, guardrails
 - [mcp/README.md](mcp/README.md) — MCP servers + project-extension convention
 - [helper/](helper/) — single-keyword layer, auth, Jira reporter
-- [jenkins/regression-pipeline](jenkins/regression-pipeline) — declarative pipeline (params, allure, email)
+- [ci/README.md](ci/README.md) — CI samples (Jenkins · GitHub Actions · GitLab CI) + the cross-provider contract
+- [ci/jenkins/regression-pipeline](ci/jenkins/regression-pipeline) — declarative pipeline (params, allure, email)

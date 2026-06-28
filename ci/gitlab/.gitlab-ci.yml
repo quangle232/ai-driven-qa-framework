@@ -1,0 +1,96 @@
+# =============================================================================
+# SAMPLE — GitLab CI/CD pipeline (Playwright + AI QA Agent)
+#
+# This file is a TEMPLATE and is INERT where it sits (ci/gitlab/).
+# GitLab only reads .gitlab-ci.yml from the repo ROOT, so to activate it:
+#   cp ci/gitlab/.gitlab-ci.yml .gitlab-ci.yml
+#
+# It mirrors the Jenkins + GitHub Actions samples: same canonical Playwright
+# command, same artifacts, same AI-QA report pipeline. See ci/README.md.
+#
+# Required CI/CD variables (Settings → CI/CD → Variables; mark them Masked):
+#   AUTH_URL, APP_URL, APP_USER, APP_PASS           — SUT login
+#   JIRA_URL, JIRA_EMAIL, JIRA_TOKEN, JIRA_PROJECT  — optional, failure→Bug reporter
+#   ANTHROPIC_API_KEY                               — optional, LLM diagnosis
+#
+# The Playwright image bundles the browsers — keep its tag in sync with the
+# @playwright/test version in package.json (currently ^1.58.2).
+# =============================================================================
+
+stages:
+  - test
+  - report
+
+variables:
+  # Auto-detected, but set explicitly for src/ai-qa-agent/collectors/ci-metadata-collector.ts.
+  CI_PROVIDER: gitlab-ci
+  test_env: test
+  GIT_DEPTH: "20"
+
+# Shared setup for every Playwright job.
+.playwright_base:
+  image: mcr.microsoft.com/playwright:v1.58.2-jammy
+  stage: test
+  variables:
+    INVERT_BUGS: "true"
+    # Use 1 worker on a shared/demo SUT — see docs/ai/LESSONS-LEARNED.md.
+    WORKERS: "1"
+    RETRIES: "2"
+  cache:
+    key:
+      files: [yarn.lock]
+    paths: [node_modules/]
+  before_script:
+    - corepack enable || npm install -g yarn
+    - yarn install --frozen-lockfile
+    - mkdir -p environments
+    - |
+      cat > "environments/.env.${test_env}" <<EOF
+      AUTH_URL=${AUTH_URL}
+      APP_URL=${APP_URL}
+      APP_USER=${APP_USER}
+      APP_PASS=${APP_PASS}
+      EOF
+  script:
+    # Run the tests but keep going so reports + artifacts are always produced;
+    # re-raise the real exit code at the end so the job status is accurate.
+    - INVERT_ARG=""; [ "$INVERT_BUGS" = "true" ] && INVERT_ARG='--grep-invert @bugs'
+    - set +e
+    - npx cross-env test_env="$test_env" playwright test -c config/playwright.config.ts --grep "$TAGS" $INVERT_ARG --workers="$WORKERS" --retries="$RETRIES"
+    - TEST_EXIT=$?
+    - set -e
+    - yarn report:all || true
+    - '[ -f test-output/ai/ci-summary.md ] && cat test-output/ai/ci-summary.md || true'
+    - exit $TEST_EXIT
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - test-output/html
+      - test-output/ai
+      - test-output/allure-results
+      - test-output/playwright-report.json
+    # To populate the merge-request test widget, add a JUnit reporter to
+    # config/playwright.config.ts and expose it here:
+    #   reports:
+    #     junit: test-output/junit.xml
+
+# Full regression — scheduled, manual (web), or manual on the default branch.
+regression:
+  extends: .playwright_base
+  variables:
+    TAGS: "@regression"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
+
+# Fast smoke gate on every merge request.
+smoke:
+  extends: .playwright_base
+  variables:
+    TAGS: "@smoke"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'

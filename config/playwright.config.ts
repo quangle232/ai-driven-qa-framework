@@ -1,17 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import { APP_STORAGE_STATE } from '../helper/auth-config';
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-import dotenv from 'dotenv';
-/* Load the env-specific file chosen via `cross-env test_env=...` (falls back to root .env). */
-if (process.env.test_env) {
-    dotenv.config({ path: `./environments/.env.${process.env.test_env}`, override: true });
-} else {
-    dotenv.config();
-}
+/* Load environments/.env.<test_env> (test_env = dev | test | prod; default test). */
+import { loadEnvFile } from '../helper/load-env';
+loadEnvFile();
 
 const isCI = !!process.env.CI;
 /**
@@ -58,7 +50,7 @@ export default defineConfig({
         /* Base URL to use in actions like `await page.goto('/')`. */
         // baseURL: 'http://127.0.0.1:3000',
 
-        /* Reuse the authenticated + Sandbox-selected session created in global-setup. */
+        /* Reuse the authenticated session created in global-setup. */
         storageState: APP_STORAGE_STATE,
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
@@ -75,9 +67,49 @@ export default defineConfig({
     /* Configure projects for major browsers */
     projects: [
         {
+            // Desktop web suite. Excludes the API/gRPC/mobile dirs so a browser
+            // is not launched for non-UI specs.
             name: 'WEB CHROME',
+            testIgnore: [
+                '**/tests/api/**',
+                '**/tests/grpc/**',
+                '**/tests/mobile/**',
+                '**/tests/mobile-web/**',
+            ],
             use: { ...devices['Desktop Chrome'] },
         },
+        {
+            // REST API specs — no browser; uses Playwright's `request` fixture.
+            name: 'api',
+            testMatch: '**/tests/api/**/*.spec.ts',
+            use: { storageState: undefined },
+        },
+        {
+            // gRPC specs — no browser; uses the GameClient + mock fixtures.
+            name: 'grpc',
+            testMatch: '**/tests/grpc/**/*.spec.ts',
+            use: { storageState: undefined },
+        },
+        {
+            // Mobile-web emulation — reuses the web POM at a phone viewport.
+            name: 'mobile-web-android',
+            testMatch: '**/tests/mobile-web/**/*.spec.ts',
+            use: { ...devices['Pixel 7'] },
+        },
+        {
+            name: 'mobile-web-ios',
+            testMatch: '**/tests/mobile-web/**/*.spec.ts',
+            use: { ...devices['iPhone 14'] },
+        },
+        // Native Appium project — only registered when ALLOW_MOBILE_NATIVE=1, so
+        // an ordinary run never loads WebdriverIO or tries to start a device.
+        ...(process.env.ALLOW_MOBILE_NATIVE
+            ? [{
+                name: 'mobile-native',
+                testMatch: '**/tests/mobile/**/*.spec.ts',
+                use: { storageState: undefined },
+            }]
+            : []),
         /*{
       name: 'safari',
       use: { ...devices['Desktop Safari']},

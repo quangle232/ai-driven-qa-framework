@@ -151,7 +151,7 @@ other client) next to the framework's defaults.
 4. **File range cap** — 120 lines per `read_snippet` call.
 5. **No stdout logging** — stdio MCP servers must keep stdout clean; all
    logs go to stderr.
-6. **No write to `helper/`, `config/`, `jenkins/`, `.env`, `.auth/`** — guard
+6. **No write to `helper/`, `config/`, `ci/`, `.env`, `.auth/`** — guard
    enforced at policy level + at the source (the memory server only writes
    `.aiqa-memory/`, the test-runner spawns processes but never writes
    source files).

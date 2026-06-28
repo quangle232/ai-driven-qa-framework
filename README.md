@@ -35,13 +35,14 @@ app.
 | ⚡ **Parallel execution** | `--workers 1–10`. Workers share `storageState`. Build time drops 5–10×. |
 | 👻 **Headless by default** | CI runs headless; `HEADED` flips to headed for debugging. |
 | 🎞️ **Trace · video · screenshot** | Playwright auto-retains all three on failure → `trace.zip` opens in the Inspector for time-travel debugging. |
-| 🌐 **Multi-environment** | `cross-env test_env=sandbox\|uat` + `dotenv`. Same suite, any env. |
-| 🏗️ **Jenkins CI pipeline** | Parameterised declarative pipeline: `BRANCH`, `TAGS`, `ENVIRONMENT`, `INVERT_BUGS`, `REFRESH_STORAGE`, `RETRIES`, `WORKERS`, `HEADED`. Allure + artifact archive + HTML stats e-mail built-in. |
+| 🌐 **Multi-environment** | `cross-env test_env=dev\|test\|prod` + `dotenv` (resolver in `helper/load-env.ts`; default `test`). Same suite, any env. |
+| 🏗️ **CI pipelines (3 providers)** | Ready-to-copy samples for **Jenkins · GitHub Actions · GitLab CI** in [`ci/`](ci/README.md) — same canonical Playwright command, same artifacts, same `yarn report:all` AI-QA pipeline. Jenkins is a parameterised declarative pipeline (`BRANCH`, `TAGS`, `ENVIRONMENT`, `INVERT_BUGS`, `REFRESH_STORAGE`, `RETRIES`, `WORKERS`, `HEADED`; Allure + artifact archive + HTML stats e-mail). |
 | 🏷️ **Tag-based trigger** | `trigger-jenkins.js <tag>` fires the regression job by tag (== Jira label) from PR / CI / qa-agent. `--no-wait` + `--status` for long builds. |
 | 📧 **E-mail + Allure** | Per-build HTML summary mailed to stakeholders, plus the per-build Allure report. |
 | 🤖 **qa-agent AI skill** | `.claude/skills/qa-agent/` for Claude and `.agents/skills/qa-agent/` for Codex — given a Jira `user_story_key`, generate manual + automation test cases, generate Playwright code in this framework's conventions, run + report. Status-gated, search-then-reuse Jira bug dedupe, 3 sub-tasks on completion. |
 | 🧠 **AI QA Agent runtime** | `src/ai-qa-agent/` — deterministic watcher + failure clustering + LLM-backed diagnosis (bounded recursive loops) + stakeholder HTML report. `yarn aiqa:run-regression` runs Playwright + a live failure scanner sub-agent + auto-generates a self-contained HTML report for PM/BO. See [src/ai-qa-agent/README.md](src/ai-qa-agent/README.md). |
 | 🔌 **MCP servers** | `mcp/` — 4 read-only servers (qa-report, framework-context, memory, test-runner) exposing 25 tools so Claude Code / Cursor / Windsurf can query the framework directly. Memory persists known issues / flaky history / domain glossary for the LLM to recall. See [mcp/README.md](mcp/README.md). |
+| 🧪 **API · gRPC · mobile testing** | Beyond UI: REST (Service-Object Model + zod validation + MSW & Express/Prism mocks), gRPC (sample casino proto with all RPC types + in-process mock server), and mobile (Appium native + Playwright mobile-web, parallel drivers). All on the **one** Playwright runner → same Allure / Jira-bug / AI-QA / CI pipeline. See [api/](api/README.md), [grpc/](grpc/README.md), [mobile/](mobile/README.md). |
 | 🛡️ **Patch-guard** | `yarn aiqa:guard` — deterministic safety gate that refuses generated code violating framework conventions (wrong import, hard waits, missing `TAGS.REGRESSION`, raw `this.page.click`, hardcoded secrets, path traversal). Runs automatically on every `aiqa:generate-automation --apply`. |
 
 ---
@@ -61,7 +62,7 @@ app.
 
 3. **Set per-env values** — copy the template and edit:
    ```bash
-   cp environments/.env.example environments/.env.sandbox
+   cp environments/.env.test.example environments/.env.test
    # AUTH_URL=, APP_URL=, APP_USER=, APP_PASS=, ...
    ```
 
@@ -74,7 +75,7 @@ app.
 5. **Write your first spec** — copy `tests/sample/sample.spec.ts` and
    `page-objects/sample/sample-page.ts`, adapt to your screens, then:
    ```bash
-   yarn test:sandbox
+   yarn test:test
    ```
 
 ---
@@ -89,8 +90,11 @@ helper/        ActionKeyword (single keyword layer), global-setup,
                (extended test with auto-fixture for bug reporting).
 page-objects/  BasePage + your per-screen classes. `sample/` is an example.
 test-data/    Inputs + expected values for specs.
-tests/         Specs, tagged with `tags(TAGS.X, ...)`.
-jenkins/       Declarative pipeline + e-mail stats script.
+tests/         Specs, tagged with `tags(TAGS.X, ...)` — api/ grpc/ mobile/ mobile-web/ sample/.
+api/           REST API testing — service objects + zod + MSW/Express mocks (api/README.md).
+grpc/          gRPC testing — sample casino proto + client + mock (grpc/README.md).
+mobile/        Native (Appium) screen objects + capabilities (mobile/README.md).
+ci/            Sample CI pipelines (jenkins/, github-actions/, gitlab/) — see ci/README.md.
 docs/          Architecture / execution-flow / capabilities diagrams (HTML
                + PNG for slides). docs/ai/ tracks qa-agent progress.
 .claude/       Claude qa-agent skill (SKILL.md, references/, examples/, scripts/).
@@ -120,7 +124,7 @@ docs/          Architecture / execution-flow / capabilities diagrams (HTML
 | Command | What it does |
 |---|---|
 | `yarn aiqa:doctor` | Health-check the install (Node, deps, env, auth stub, tags, MCP). |
-| `yarn aiqa:init-project --env=sandbox --app-url=…` | Scaffold `.env.<env>` + seed `.aiqa-memory/`. |
+| `yarn aiqa:init-project --env=test --app-url=…` | Scaffold `.env.<env>` + seed `.aiqa-memory/`. |
 | `yarn aiqa:scan` / `--prompt` | Index existing POMs / specs / tags / keywords. The LLM reads this before generating code. |
 | `yarn aiqa:generate-automation --test-cases=<file>` | Generate Playwright code from manual test cases. Add `--apply` to write to disk. |
 | `yarn aiqa:guard` / `--files=…` | Deterministic safety gate — accept/reject per file. |

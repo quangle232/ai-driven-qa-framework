@@ -1,6 +1,6 @@
 import { FullConfig } from '@playwright/test';
 import fs from 'fs';
-import dotenv from 'dotenv';
+import { loadEnvFile } from './load-env';
 import authenticateSetup from './authenticate-set-up';
 import { APP_STORAGE_STATE } from './auth-config';
 
@@ -27,12 +27,14 @@ function parseRefreshFlag(): boolean {
  * - otherwise             -> reuse the existing storage state.
  */
 async function globalSetup(config: FullConfig): Promise<void> {
-    // Handle environment config
-    if (process.env.test_env) {
-        dotenv.config({
-            path: `./environments/.env.${process.env.test_env}`,
-            override: true,
-        });
+    // Load environments/.env.<test_env> (default test).
+    loadEnvFile();
+
+    // API / gRPC runs don't need a web sign-in. The test:api / test:grpc
+    // scripts set SKIP_WEB_AUTH=1 so global-setup is a no-op for them.
+    if (process.env.SKIP_WEB_AUTH === '1') {
+        console.log('[globalSetup] SKIP_WEB_AUTH=1 -> skipping web sign-in.');
+        return;
     }
 
     const appUrl = process.env.APP_URL ?? process.env.URL;

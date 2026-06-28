@@ -65,7 +65,7 @@ The AI QA Agent will **never**:
 - `helper/jira-bug-reporter.ts` — keeps creating / reusing Jira bugs on final
   failure exactly as before. The new bug-draft writer (Phase 8) is a separate
   Markdown writer; it never posts to Jira on its own.
-- `jenkins/regression-pipeline` — untouched. The aiqa post-block snippet is
+- `ci/jenkins/regression-pipeline` — untouched. The aiqa post-block snippet is
   documented separately (Phase 2).
 
 ## Environment variables (read-only; absent means "off")

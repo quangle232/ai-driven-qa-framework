@@ -134,7 +134,7 @@ function main() {
         for (const title of match.titles) console.log(`    - ${title}`);
     }
     console.log('\nRun the related tests with:');
-    console.log(`  npx cross-env test_env=sandbox playwright test -c config/playwright.config.ts --grep ${tag.value}`);
+    console.log(`  npx cross-env test_env=test playwright test -c config/playwright.config.ts --grep ${tag.value}`);
     process.exit(0);
 }
 

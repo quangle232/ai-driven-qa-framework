@@ -7,6 +7,36 @@ This framework versions independently of any consuming product repo.
 
 ---
 
+## [Unreleased]
+
+### Added
+- **`ci/` — sample CI pipelines for three providers.** `ci/jenkins/` (moved
+  from `jenkins/`), `ci/github-actions/regression.yml` + `pr-smoke.yml`, and
+  `ci/gitlab/.gitlab-ci.yml`. All run the same canonical Playwright command,
+  produce the same `test-output/` artifacts, and run `yarn report:all`, so they
+  feed the AI QA Agent collectors identically. `ci/README.md` documents the
+  cross-provider contract and how each maps to `CI_PROVIDER` +
+  `collectors/ci-metadata-collector.ts`.
+- **API, gRPC and mobile testing layers.** `api/` (Service-Object Model over
+  Playwright `request` + zod validation + MSW/Express/Prism mocks), `grpc/`
+  (sample casino proto with all four RPC types + in-process mock server + typed
+  client with deadlines/metadata), and `mobile/` (Appium native via WebdriverIO
+  + Playwright mobile-web emulation, parallel per-worker drivers). All run on the
+  single Playwright runner → same Allure / Jira-bug / AI-QA / CI pipeline. Adds
+  tags `@api`/`@grpc`/`@mobile` (+ `-web`/`-native`), Playwright projects,
+  `test:api`/`test:grpc`/`test:mobile:*` + `mock:api`/`grpc:mock` scripts, and
+  deps (`@grpc/grpc-js`, `@grpc/proto-loader`, `msw`, `express`, `webdriverio`,
+  `appium`, `@stoplight/prism-cli`; `zod` already present). See `api/README.md`,
+  `grpc/README.md`, `mobile/README.md`.
+
+### Changed
+- **Moved `jenkins/` → `ci/jenkins/`** to consolidate all CI samples under
+  `ci/`. Updated every reference (docs, qa-agent skill, patch-guard, MCP guard)
+  and the pipeline's internal `collect-playwright-stats.js` path; the
+  patch-guard / builder guardrail now protects the whole `ci/` tree.
+
+---
+
 ## [0.2.0] — 2026-06-28
 
 Productized after a full real-world engagement. Renamed
@@ -148,8 +178,8 @@ First release. Full AI QA Agent capability on top of the original Playwright
 `helper/test.ts`, `helper/jira-bug-reporter.ts`, `helper/global-setup.ts`,
 `helper/authenticate-set-up.ts`, `helper/action-keywords.ts`,
 `helper/test-tags.ts` (template), `config/playwright.config.ts`,
-`page-objects/sample/`, `tests/sample/`, `jenkins/regression-pipeline`,
-`jenkins/scripts/collect-playwright-stats.js`, `environments/*.example`,
+`page-objects/sample/`, `tests/sample/`, `ci/jenkins/regression-pipeline`,
+`ci/jenkins/scripts/collect-playwright-stats.js`, `environments/*.example`,
 the `.claude/skills/qa-agent/` and `.agents/skills/qa-agent/` skill files.
 
 ### Hard guardrails enforced at three levels

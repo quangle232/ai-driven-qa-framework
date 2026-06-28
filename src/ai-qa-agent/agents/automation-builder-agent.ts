@@ -58,7 +58,7 @@ Hard rules:
 - Page objects MUST extend BasePage and only call this.actionKeyword.* — never this.page.click/fill/etc.
 - Locators must use stable data attributes (data-zcqa, data-test-id, data-id, data-title).
 - No page.waitForTimeout. No nth(N). No commented-out assertions. No test.skip on failing logic.
-- Do NOT touch helper/, .auth/, environments/, jenkins/, config/playwright.config.ts.
+- Do NOT touch helper/, .auth/, environments/, ci/, config/playwright.config.ts.
 - Each "content" must compile as TypeScript under the existing tsconfig (strict OFF in root).
 
 REUSE rules (read the "Existing code in this repo" block carefully):

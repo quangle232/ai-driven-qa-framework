@@ -1,0 +1,136 @@
+# =============================================================================
+# SAMPLE — GitHub Actions regression pipeline (Playwright + AI QA Agent)
+#
+# This file is a TEMPLATE and is INERT where it sits (ci/github-actions/).
+# To activate it:  cp ci/github-actions/regression.yml .github/workflows/
+#
+# It mirrors the Jenkins sample (ci/jenkins/regression-pipeline): same canonical
+# Playwright command, same artifacts, same AI-QA report pipeline. See
+# ci/README.md for the cross-provider alignment contract.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   AUTH_URL, APP_URL, APP_USER, APP_PASS      — SUT login (see environments/.env.example)
+#   JIRA_URL, JIRA_EMAIL, JIRA_TOKEN, JIRA_PROJECT  — optional, for the failure→Bug reporter
+# =============================================================================
+
+name: Regression (sample)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Test environment (loads environments/.env.<env>)
+        type: choice
+        options: [dev, test, prod]
+        default: test
+      tags:
+        description: Playwright --grep tag(s), e.g. "@regression" or "@crm|@auth"
+        type: string
+        default: "@regression"
+      invert_bugs:
+        description: Exclude @bugs tests (clean green slice)
+        type: boolean
+        default: true
+      workers:
+        description: Playwright workers (use 1 for a shared/demo SUT — see docs/ai/LESSONS-LEARNED.md)
+        type: string
+        default: "1"
+      retries:
+        description: Retries (2 lets count/reconciliation flakes self-heal)
+        type: string
+        default: "2"
+  # Nightly regression — uncomment after copying to .github/workflows/ to enable.
+  # schedule:
+  #   - cron: "0 18 * * *"   # 18:00 UTC daily
+
+permissions:
+  contents: read
+
+# One regression run at a time; cancel superseded manual runs.
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+      # The AI QA Agent auto-detects this, but set it explicitly so
+      # src/ai-qa-agent/collectors/ci-metadata-collector.ts is unambiguous.
+      CI_PROVIDER: github-actions
+      test_env: ${{ github.event.inputs.environment || 'test' }}
+      TAGS: ${{ github.event.inputs.tags || '@regression' }}
+      INVERT_BUGS: ${{ github.event.inputs.invert_bugs || 'true' }}
+      WORKERS: ${{ github.event.inputs.workers || '1' }}
+      RETRIES: ${{ github.event.inputs.retries || '2' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browser (chromium only — see config/playwright.config.ts)
+        run: npx playwright install --with-deps chromium
+
+      - name: Provision env file from secrets
+        run: |
+          mkdir -p environments
+          cat > "environments/.env.${test_env}" <<EOF
+          AUTH_URL=${{ secrets.AUTH_URL }}
+          APP_URL=${{ secrets.APP_URL }}
+          APP_USER=${{ secrets.APP_USER }}
+          APP_PASS=${{ secrets.APP_PASS }}
+          EOF
+
+      - name: Run Playwright regression
+        # Jira creds let the failure→Bug auto-reporter run on FINAL failures.
+        # Leave the secrets unset to skip Jira entirely.
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_PROJECT: ${{ secrets.JIRA_PROJECT }}
+        run: |
+          INVERT_ARG=""
+          [ "$INVERT_BUGS" = "true" ] && INVERT_ARG='--grep-invert @bugs'
+          npx cross-env test_env="$test_env" playwright test \
+            -c config/playwright.config.ts \
+            --grep "$TAGS" $INVERT_ARG \
+            --workers="$WORKERS" --retries="$RETRIES"
+
+      - name: AI QA Agent report pipeline
+        if: always()
+        continue-on-error: true
+        # Deterministic without ANTHROPIC_API_KEY (provider falls back to noop).
+        # Set the ANTHROPIC_API_KEY secret to enable LLM root-cause diagnosis.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: yarn report:all
+
+      - name: Publish summary to the run page
+        if: always()
+        run: |
+          if [ -f test-output/ai/ci-summary.md ]; then
+            cat test-output/ai/ci-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "_No AI QA summary produced._" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            test-output/html
+            test-output/ai
+            test-output/allure-results
+            test-output/playwright-report.json

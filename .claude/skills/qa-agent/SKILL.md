@@ -131,7 +131,7 @@ For each automatable case not already covered by existing code:
 
 ### Phase 6 — Run new auto cases *(full mode only)*
 - Local (fast iteration):
-  `npx cross-env test_env=sandbox refresh=yes playwright test -c config/playwright.config.ts --grep <new-tag>`
+  `npx cross-env test_env=test refresh=yes playwright test -c config/playwright.config.ts --grep <new-tag>`
 - Or on Jenkins (CI / proof):
   `node .claude/skills/qa-agent/scripts/trigger-jenkins.js <new-tag> --branch=main --no-wait`
 - Check the Phase 2 build too (the related-tests run):

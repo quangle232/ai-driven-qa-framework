@@ -6,12 +6,15 @@ live framework — read the referenced source files before generating code.
 ## 1. Project structure
 ```
 config/        Playwright configs (playwright.config.ts = web)
-environments/  .env.sandbox / .env.uat (selected at runtime via test_env)
+environments/  .env.dev / .env.test / .env.prod (selected at runtime via test_env)
 helper/        ActionKeyword, global-setup, auth, date-helper, test-tags, ...
 page-objects/  BasePage + sut/ page object classes
 test-data/     input + expected data modules
-tests/         specs — generated specs go in tests/sample/
-jenkins/       Jenkins pipeline + collect-playwright-stats.js
+tests/         specs — UI in tests/sample/; also api/ grpc/ mobile/ mobile-web/
+api/           REST API testing — clients/ services/ models/ mock/ (see api/README.md)
+grpc/          gRPC testing — proto/ clients/ mock/ (see grpc/README.md)
+mobile/        native mobile — capabilities/ screen-objects/ (see mobile/README.md)
+ci/            Sample CI pipelines: jenkins/, github-actions/, gitlab/ (see ci/README.md)
 docs/ai/       qa-agent tracking files (memory.md, test-case.md, navigation.md)
 ```
 
@@ -117,9 +120,9 @@ export class SomePage extends BasePage {
 - All code comments in English — concise, explaining "why", not "what".
 
 ## 10. Running
-- Local: `yarn web:test:sandbox` (see `package.json` scripts).
+- Local: `yarn test:test` (see `package.json` scripts).
 - Tag slice:
-  `npx cross-env test_env=sandbox playwright test -c config/playwright.config.ts --grep @service-request`
+  `npx cross-env test_env=test playwright test -c config/playwright.config.ts --grep @service-request`
 - Exclude known defects: add `--grep-invert @bugs`.
 
 ## 11. Scripts vs framework code — file types
@@ -130,7 +133,28 @@ export class SomePage extends BasePage {
   the qa-agent `scripts/`) — is **JavaScript (`.js`), ESM**. `package.json` sets
   `"type": "module"`, so a plain `.js` file is ALREADY an ES module: use
   `import` (not `require`), and do NOT use the `.mjs` extension. Precedent:
-  `jenkins/scripts/collect-playwright-stats.js`.
+  `ci/jenkins/scripts/collect-playwright-stats.js`.
 - Do not write a `.ts` script meant to be run with bare `node` — without a TS
   runner (`tsx` / `ts-node`) it will not execute. Keep generated skill scripts
   as `.js`.
+
+## Multi-surface testing layers (API · gRPC · mobile)
+
+Beyond UI, the framework tests REST, gRPC, and mobile — all on the SAME
+Playwright runner, each mirroring POM's "object model + single keyword layer":
+
+- **API** (`tests/api`, import `helper/api/test-api`): call `api/services/*`
+  (Service-Object Model), never the raw client. `api/clients/api-client.ts` is the
+  only HTTP layer; validate responses with the `zod` models in `api/models`.
+  Mocks: MSW (node-`fetch` specs) + the Express server (Playwright-`request` specs).
+- **gRPC** (`tests/grpc`, import `helper/grpc/test-grpc`): call `grpc/clients/*`,
+  set a deadline on every call, assert gRPC STATUS CODES (not just payloads),
+  auth via metadata. The mock implements `grpc/proto`.
+- **Mobile**: native (`tests/mobile`, import `helper/mobile/test-mobile`) uses
+  Screen Objects + `MobileActionKeyword` (accessibility-id-first) and is
+  skip-gated; mobile-web (`tests/mobile-web`) reuses the web POM.
+
+Tags: `@api` / `@grpc` / `@mobile` (+ `@mobile-web` / `@mobile-native`) on top of
+`@regression`. Do NOT generate into `api/contracts/` or `grpc/proto/` (contracts
+are source-of-truth and patch-guarded). Full rules: `api/README.md`,
+`grpc/README.md`, `mobile/README.md`.
