@@ -1,4 +1,4 @@
-# Framework Conventions — ai-driven-custom-framework
+# Framework Conventions — ai-driven-qa-framework
 
 Generated code MUST match these conventions exactly. They are derived from the
 live framework — read the referenced source files before generating code.

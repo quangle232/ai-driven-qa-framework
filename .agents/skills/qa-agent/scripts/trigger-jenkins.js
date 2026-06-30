@@ -3,8 +3,7 @@
  * trigger-jenkins.js
  *
  * Trigger the Jenkins regression job for a given tag and wait for the result.
- * qa-agent Phase 2 / Phase 6 uses this to run tests on CI by the Jira label
- * (tag == label).
+ * qa-agent Phase 4 uses this to run tests on CI by the Jira label (tag == label).
  *
  * Config — read from env vars, or from `environments/.env.jenkins` (gitignored;
  * env vars win). NEVER hard-code credentials in this file:

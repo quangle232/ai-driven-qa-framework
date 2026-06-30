@@ -19,7 +19,7 @@ Every generated test case (manual or automation) uses these fields:
 | `acIds` | Mapped AC ids, e.g. `["AC1"]` |
 | `specFile` | Path to the generated spec (Automation cases, once generated) |
 
-## Markdown table form (used in the Phase 4 review)
+## Markdown table form (used in the Phase 5 review)
 | ID | Title | Type | Pr. | Tags | Preconditions | Steps | Expected Result | Automatable | Status |
 |----|-------|------|-----|------|---------------|-------|-----------------|-------------|--------|
 

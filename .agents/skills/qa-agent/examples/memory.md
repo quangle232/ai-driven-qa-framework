@@ -1,7 +1,7 @@
 # QA Agent Memory — EXAMPLE
 
 EXAMPLE of `docs/ai/memory.md` for a fresh project. The qa-agent reads this
-in Phase 0 and updates it after every generation/run and before Jira sync.
+in Phase 0 and updates it in Phase 6 after every generation / run.
 
 ## Generated work
 | Date | User story | Feature | Tag / Jira label | Artifacts |

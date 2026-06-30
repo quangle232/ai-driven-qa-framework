@@ -1,6 +1,6 @@
 # Triggering the Jenkins regression job by tag
 
-qa-agent Phase 4 can run the tests on Jenkins CI instead of (or as well as)
+qa-agent Phase 7 (execution) can run the tests on Jenkins CI instead of (or as well as)
 locally. Because `tag == Jira label`, the Jira label taken from the user story
 is exactly the value passed to the Jenkins job's `TAGS` parameter.
 

@@ -100,7 +100,7 @@ pipeline {
     stage('Checkout source code') {
       steps {
         git(
-          url: 'git@github.com:trustify/ai-driven-custom-framework.git',
+          url: 'git@github.com:quangle232/ai-driven-qa-framework.git',
           branch: params.BRANCH,
           credentialsId: 'git'
         )

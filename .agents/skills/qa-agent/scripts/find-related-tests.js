@@ -3,7 +3,7 @@
  * find-related-tests.js
  *
  * Detect existing spec files that carry a given tag (== Jira label), so the
- * qa-agent skill (Phase 2) can run related existing tests early.
+ * qa-agent skill (Phase 4) can run new tests together with related existing ones.
  *
  * Specs reference tags through the TAGS map (e.g. tags(TAGS.SERVICE_REQUEST)),
  * not the literal "@service-request" string. This script reads
@@ -14,7 +14,6 @@
  *   node .agents/skills/qa-agent/scripts/find-related-tests.js @service-request
  *   node .agents/skills/qa-agent/scripts/find-related-tests.js service-request
  *   node .agents/skills/qa-agent/scripts/find-related-tests.js SERVICE_REQUEST
- *   node .agents/skills/qa-agent/scripts/find-related-tests.js "@crm|@add-case"
  *
  * Exit codes: 0 = matches found, 1 = no matches, 2 = usage / parse error.
  *
@@ -36,22 +35,14 @@ function findRepoRoot(start) {
     return null;
 }
 
-function stripComments(src) {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/(^|[^:])\/\/.*$/gm, '$1');
-}
-
 /** Parse helper/test-tags.ts into { valueToKey, keyToValue } maps. */
 function parseTagsMap(tagsFile) {
     const src = readFileSync(tagsFile, 'utf8');
-    const tagsObject = src.match(/export\s+const\s+TAGS\s*=\s*{([\s\S]*?)}\s+as\s+const/);
-    const body = stripComments(tagsObject ? tagsObject[1] : src);
     const valueToKey = {};
     const keyToValue = {};
     const re = /(\w+)\s*:\s*["'`](@[\w-]+)["'`]/g;
     let m;
-    while ((m = re.exec(body)) !== null) {
+    while ((m = re.exec(src)) !== null) {
         keyToValue[m[1]] = m[2];
         valueToKey[m[2]] = m[1];
     }
@@ -66,18 +57,6 @@ function resolveTag(arg, maps) {
     const withAt = '@' + arg.replace(/^@/, '');
     if (valueToKey[withAt]) return { key: valueToKey[withAt], value: withAt };
     return null;
-}
-
-function resolveTagExpression(arg, maps) {
-    const parts = arg.split('|').map((part) => part.trim()).filter(Boolean);
-    const resolved = [];
-    const unknown = [];
-    for (const part of parts) {
-        const tag = resolveTag(part, maps);
-        if (tag) resolved.push(tag);
-        else unknown.push(part.startsWith('@') ? part : `@${part}`);
-    }
-    return { resolved, unknown };
 }
 
 /** Recursively collect every *.spec.ts file under `dir`. */
@@ -117,12 +96,11 @@ function main() {
     }
 
     const maps = parseTagsMap(join(repoRoot, 'helper', 'test-tags.ts'));
-    const { resolved: tags, unknown } = resolveTagExpression(arg, maps);
-    if (tags.length === 0) {
-        console.log(`Tag: ${arg}`);
-        console.log(`No known TAGS entry found in helper/test-tags.ts for: ${unknown.join(', ')}`);
-        console.log('No existing tests can carry this feature tag yet.');
-        process.exit(1);
+    const tag = resolveTag(arg, maps);
+    if (!tag) {
+        console.error(`Error: "${arg}" is not a known tag.`);
+        console.error(`Known tags: ${Object.keys(maps.valueToKey).join(', ')}`);
+        process.exit(2);
     }
 
     const testsDir = join(repoRoot, 'tests');
@@ -132,22 +110,17 @@ function main() {
     }
 
     const specs = walkSpecs(testsDir, []);
-    const needles = tags.map((tag) => new RegExp(`TAGS\\.${tag.key}\\b`));
+    const needle = new RegExp(`TAGS\\.${tag.key}\\b`);
     const matches = [];
 
     for (const spec of specs) {
         const src = readFileSync(spec, 'utf8');
-        if (needles.some((needle) => needle.test(src))) {
+        if (needle.test(src)) {
             matches.push({ file: relative(repoRoot, spec), titles: extractTitles(src) });
         }
     }
 
-    const tagValues = tags.map((tag) => tag.value).join('|');
-    const tagKeys = tags.map((tag) => `TAGS.${tag.key}`).join(', ');
-    console.log(`Tag: ${tagValues}  (${tagKeys})`);
-    if (unknown.length > 0) {
-        console.log(`Skipped unknown tag(s): ${unknown.join(', ')}`);
-    }
+    console.log(`Tag: ${tag.value}  (TAGS.${tag.key})`);
     console.log(`Scanned ${specs.length} spec file(s) under tests/.`);
 
     if (matches.length === 0) {
@@ -161,7 +134,7 @@ function main() {
         for (const title of match.titles) console.log(`    - ${title}`);
     }
     console.log('\nRun the related tests with:');
-    console.log(`  npx cross-env test_env=test playwright test -c config/playwright.config.ts --grep "${tagValues}"`);
+    console.log(`  npx cross-env test_env=test playwright test -c config/playwright.config.ts --grep ${tag.value}`);
     process.exit(0);
 }
 

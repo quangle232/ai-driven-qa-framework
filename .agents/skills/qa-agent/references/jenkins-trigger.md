@@ -1,6 +1,6 @@
 # Triggering the Jenkins regression job by tag
 
-qa-agent Phase 2 / Phase 6 can run the tests on Jenkins CI instead of (or as well as)
+qa-agent Phase 7 (execution) can run the tests on Jenkins CI instead of (or as well as)
 locally. Because `tag == Jira label`, the Jira label taken from the user story
 is exactly the value passed to the Jenkins job's `TAGS` parameter.
 
@@ -27,7 +27,7 @@ Exit codes: `0` build SUCCESS / no-wait fired, `1` build not SUCCESS,
 
 ## When to use which mode (long-running builds)
 The default mode triggers AND polls until the build finishes. For builds that
-may run **> 10 minutes** — agent runtime caps can kill that loop
+may run **> 10 minutes** — Claude Code's background-command cap — that loop
 will be killed before completion and the result lost. Use the split flow:
 
 1. `--no-wait` — trigger and exit fast (~30s, just long enough to capture the

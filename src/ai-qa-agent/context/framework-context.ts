@@ -69,7 +69,7 @@ function buildContextBlock(): string {
 
     sections.push("# Framework conventions — Playwright + TypeScript (this repo)");
     sections.push("");
-    sections.push("You are generating tests for the **ai-driven-custom-framework** repo.");
+    sections.push("You are generating tests for the **ai-driven-qa-framework** repo.");
     sections.push("Match these conventions EXACTLY. Do not invent helpers that don't exist.");
     sections.push("");
     sections.push("## Imports — non-negotiable");

@@ -1,8 +1,7 @@
 # Tracking Files — docs/ai/
 
 Three files in `docs/ai/` carry context across qa-agent runs. **Read them in
-Phase 0; update them after every generation/run and again in Phase 7** before
-Jira sync.
+Phase 0; update them in Phase 6** (after every generation and every run).
 
 Purpose: never regenerate code or flows that already exist — reuse or re-run
 them instead. If a file is missing, create it from the matching file in
@@ -36,10 +35,10 @@ Reused so a known screen is not re-explored with the Playwright MCP.
 ---
 
 ## Update rules
-- After **Phase 3** (cases generated): update `test-case.md`.
-- After **Phase 5** (code generated): update `memory.md` (Generated work,
+- After **Phase 2** (cases generated): update `test-case.md`.
+- After **Phase 3** (code generated): update `memory.md` (Generated work,
   Decisions, Known gaps) and `navigation.md` (any new screen/route).
-- After **Phase 6** (run): update each case `Status` in `test-case.md`
+- After **Phase 4 / 5** (run): update each case `Status` in `test-case.md`
   (`Passed` / `Failed`) and append a row to `memory.md` "Run history".
 - Append new rows; update an existing `Status` or row in place when it changes.
 - Convert relative dates to absolute (`YYYY-MM-DD`).
