@@ -90,6 +90,14 @@ function featureFromPath(file: string, root: string): string {
     return first || "unknown";
 }
 
+/** Feature for a spec = the surface/module (segment before its `tests/` dir). */
+function specFeature(file: string): string {
+    const parts = file.split(/[/\\]/);
+    const ti = parts.indexOf("tests");
+    if (ti > 0) return parts[ti - 1]; // ui | rest | grpc | graphql | mobile
+    return parts[0] || "unknown";
+}
+
 function parsePageObject(file: string): PageObjectInfo | null {
     const src = readSafe(file);
     if (!src) return null;
@@ -101,7 +109,7 @@ function parsePageObject(file: string): PageObjectInfo | null {
     return {
         path: file,
         className: cm[1],
-        feature: featureFromPath(file, "page-objects"),
+        feature: featureFromPath(file, "ui/page-objects"),
         methods: [...new Set(methods)],
     };
 }
@@ -114,7 +122,7 @@ function parseSpec(file: string): SpecInfo | null {
     const stories = [...new Set([...src.matchAll(/setJiraStory\s*\(\s*['"`]([^'"`]+)['"`]/g)].map(m => m[1]))];
     return {
         path: file,
-        feature: featureFromPath(file, "tests"),
+        feature: specFeature(file),
         titles,
         tags,
         jiraStories: stories,
@@ -127,20 +135,20 @@ function parseTestData(file: string): TestDataInfo | null {
     const exports = [...src.matchAll(/export\s+(?:const|let|var|function|class)\s+(\w+)/g)].map(m => m[1]);
     return {
         path: file,
-        feature: featureFromPath(file, "test-data").replace(/-data\.ts$/, ""),
+        feature: featureFromPath(file, "ui/test-data").replace(/-data\.ts$/, ""),
         exports: [...new Set(exports)],
     };
 }
 
 function parseDeclaredTags(): string[] {
-    const src = readSafe("helper/test-tags.ts");
+    const src = readSafe("core/test-tags.ts");
     if (!src) return [];
     // Match `KEY: "@..."` entries inside the TAGS object literal.
     return [...src.matchAll(/^\s*([A-Z_][A-Z0-9_]*)\s*:\s*["'`]@/gm)].map(m => m[1]);
 }
 
 function parseActionKeywords(): string[] {
-    const src = readSafe("helper/action-keywords.ts");
+    const src = readSafe("ui/helpers/action-keywords.ts");
     if (!src) return [];
     // Public async methods that aren't tagged `private`/`protected`.
     const methods: string[] = [];
@@ -160,11 +168,13 @@ function parseActionKeywords(): string[] {
 }
 
 const SOURCE_MTIME_PATHS = [
-    "helper/test-tags.ts",
-    "helper/action-keywords.ts",
-    "page-objects",
-    "tests",
-    "test-data",
+    "core/test-tags.ts",
+    "ui/helpers/action-keywords.ts",
+    "ui/page-objects",
+    "ui/tests",
+    "api",
+    "mobile/tests",
+    "ui/test-data",
 ];
 
 export function loadExistingCodeIndex(): ExistingCodeIndex {
@@ -175,15 +185,17 @@ export function loadExistingCodeIndex(): ExistingCodeIndex {
         try { return JSON.parse(cached) as ExistingCodeIndex; } catch { /* rebuild */ }
     }
 
-    const pageObjects = listFiles("page-objects", /-page\.ts$/i)
+    const pageObjects = listFiles("ui/page-objects", /-page\.ts$/i)
         .map(parsePageObject)
         .filter((x): x is PageObjectInfo => !!x);
 
-    const specs = listFiles("tests", /\.spec\.ts$/i)
+    // Specs live per-module: ui/tests, api/{rest,grpc,graphql}/tests, mobile/tests.
+    const specs = ["ui/tests", "api", "mobile/tests"]
+        .flatMap(root => listFiles(root, /\.spec\.ts$/i))
         .map(parseSpec)
         .filter((x): x is SpecInfo => !!x);
 
-    const testData = listFiles("test-data", /-data\.ts$/i)
+    const testData = listFiles("ui/test-data", /-data\.ts$/i)
         .map(parseTestData)
         .filter((x): x is TestDataInfo => !!x);
 
@@ -246,12 +258,12 @@ export function renderIndexForPrompt(index: ExistingCodeIndex): string {
         }
     }
     lines.push("");
-    lines.push(`## Declared tags (TAGS.X in helper/test-tags.ts): ${index.declaredTags.map(t => `TAGS.${t}`).join(", ") || "(none)"}`);
+    lines.push(`## Declared tags (TAGS.X in core/test-tags.ts): ${index.declaredTags.map(t => `TAGS.${t}`).join(", ") || "(none)"}`);
     lines.push(`## ActionKeyword public methods: ${index.actionKeywordMethods.slice(0, 30).join(", ")}${index.actionKeywordMethods.length > 30 ? ", …" : ""}`);
     lines.push("");
     lines.push("## Reuse rules");
     lines.push("- If a page object for the target feature already exists, EXTEND it (kind: \"update\") instead of creating a new one.");
-    lines.push("- If TAGS.<FEATURE> is missing, add it to helper/test-tags.ts (kind: \"update\") so future runs find it.");
+    lines.push("- If TAGS.<FEATURE> is missing, add it to core/test-tags.ts (kind: \"update\") so future runs find it.");
     lines.push("- Reuse the ActionKeyword methods above. Do NOT invent new keyword names.");
     lines.push("- New spec files MUST include TAGS.REGRESSION + a priority tag (TAGS.P0/P1/P2) so the regression suite picks them up.");
     return lines.join("\n");

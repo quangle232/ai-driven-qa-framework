@@ -1,4 +1,4 @@
-import { MobileActionKeyword } from "../../helper/mobile/mobile-action-keyword";
+import { MobileActionKeyword } from "@mobile/helpers/mobile-action-keyword";
 
 /**
  * BaseScreen — shared base for native Screen Objects (the mobile analogue of

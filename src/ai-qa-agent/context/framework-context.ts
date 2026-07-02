@@ -3,7 +3,7 @@
  *
  * The Automation Builder Agent and the Code Reviewer Agent both need to
  * understand THIS framework's conventions: POM + ActionKeyword layer +
- * `helper/test.ts` import + setJiraStory + tag catalogue + storageState.
+ * `core/test.ts` import + setJiraStory + tag catalogue + storageState.
  * They could re-read the same files every call — but those files are large
  * and stable, so this module summarizes them ONCE per session and pins the
  * result via Anthropic prompt caching.
@@ -19,15 +19,15 @@ import { REPO_ROOT } from "../utils/paths";
 import { cacheKey, getCachedContext, putCachedContext } from "./context-cache";
 
 const SOURCES = [
-    "helper/test.ts",
-    "helper/test-tags.ts",
-    "helper/jira-story.ts",
-    "helper/auth-config.ts",
-    "helper/action-keywords.ts",
-    "page-objects/base-page.ts",
-    "page-objects/sample/sample-page.ts",
-    "tests/sample/sample.spec.ts",
-    "test-data/sample-data.ts",
+    "core/test.ts",
+    "core/test-tags.ts",
+    "core/jira/jira-story.ts",
+    "ui/helpers/auth-config.ts",
+    "ui/helpers/action-keywords.ts",
+    "ui/page-objects/base-page.ts",
+    "ui/page-objects/sample/sample-page.ts",
+    "ui/tests/sample.spec.ts",
+    "ui/test-data/sample-data.ts",
     ".claude/skills/qa-agent/references/framework-conventions.md",
     ".claude/skills/qa-agent/examples/sample-page-object.ts",
     ".claude/skills/qa-agent/examples/sample-spec.ts",
@@ -76,17 +76,17 @@ function buildContextBlock(): string {
     sections.push("- Specs MUST import `{ test, expect }` from `helper/test`, NOT from `@playwright/test`.");
     sections.push("  This is the file that wires the framework-wide failure → Jira-bug auto-fixture.");
     sections.push("- Specs MUST call `setJiraStory('<KEY>')` as the FIRST line of the test body.");
-    sections.push("- Specs MUST use `tags(TAGS.X, TAGS.Y)` from `helper/test-tags` — never raw `{ tag: '@x' }`.");
+    sections.push("- Specs MUST use `tags(TAGS.X, TAGS.Y)` from `core/test-tags` — never raw `{ tag: '@x' }`.");
     sections.push("");
     sections.push("## Page Object Model");
-    sections.push("- Every page object extends `BasePage` (from `page-objects/base-page`).");
+    sections.push("- Every page object extends `BasePage` (from `ui/page-objects/base-page`).");
     sections.push("- Page objects use `this.actionKeyword.<verb>(...)` for every Playwright interaction.");
     sections.push("- Page objects MUST NOT call `this.page.click`, `this.page.fill`, etc. directly.");
     sections.push("  The ActionKeyword layer is the only file that touches the raw Playwright API.");
     sections.push("- Locators live as private readonly fields with the `data-zcqa` → `data-test-id` →");
     sections.push("  `data-id` → `data-title` priority. Avoid positional CSS / nth-child / xpath.");
     sections.push("");
-    sections.push("## Tag catalogue (from helper/test-tags.ts)");
+    sections.push("## Tag catalogue (from core/test-tags.ts)");
     sections.push("- Test type: `TAGS.REGRESSION`, `TAGS.SMOKE`");
     sections.push("- Priority:  `TAGS.P0`, `TAGS.P1`, `TAGS.P2`");
     sections.push("- Bugs:      `TAGS.BUG`");
@@ -97,7 +97,7 @@ function buildContextBlock(): string {
     sections.push("- Steps appear in Allure + the HTML report; non-technical stakeholders read them.");
     sections.push("");
     sections.push("## Storage state / auth");
-    sections.push("- DO NOT read or write `.auth/storage-state.json`. Auth is set up once in `helper/global-setup.ts`.");
+    sections.push("- DO NOT read or write `.auth/storage-state.json`. Auth is set up once in `ui/helpers/global-setup.ts`.");
     sections.push("- Tests start already-logged-in via `use.storageState` in config.");
     sections.push("- The initial navigation is `await samplePage.open(process.env.APP_URL ?? '/')`.");
     sections.push("");
@@ -112,31 +112,31 @@ function buildContextBlock(): string {
     sections.push("");
     sections.push("### Spec shape");
     sections.push("```ts");
-    const specShape = read("tests/sample/sample.spec.ts", 50);
-    sections.push(specShape ?? "// tests/sample/sample.spec.ts unavailable");
+    const specShape = read("ui/tests/sample.spec.ts", 50);
+    sections.push(specShape ?? "// ui/tests/sample.spec.ts unavailable");
     sections.push("```");
     sections.push("");
     sections.push("### Page object shape");
     sections.push("```ts");
-    const poShape = read("page-objects/sample/sample-page.ts", 60);
-    sections.push(poShape ?? "// page-objects/sample/sample-page.ts unavailable");
+    const poShape = read("ui/page-objects/sample/sample-page.ts", 60);
+    sections.push(poShape ?? "// ui/page-objects/sample/sample-page.ts unavailable");
     sections.push("```");
     sections.push("");
     sections.push("### BasePage");
     sections.push("```ts");
-    sections.push(read("page-objects/base-page.ts", 30) ?? "// missing");
+    sections.push(read("ui/page-objects/base-page.ts", 30) ?? "// missing");
     sections.push("```");
     sections.push("");
     sections.push("### Available tags");
     sections.push("```ts");
-    sections.push(read("helper/test-tags.ts", 40) ?? "// missing");
+    sections.push(read("core/test-tags.ts", 40) ?? "// missing");
     sections.push("```");
     sections.push("");
     sections.push("## What you MUST output");
-    sections.push("- New page objects under `page-objects/<feature>/<screen>-page.ts`.");
+    sections.push("- New page objects under `ui/page-objects/<feature>/<screen>-page.ts`.");
     sections.push("- New specs under `tests/<feature>/<scenario>.spec.ts`.");
-    sections.push("- Test-data under `test-data/<feature>-data.ts` (inputs + expected).");
-    sections.push("- Optional new feature tag in `helper/test-tags.ts` — add only when the feature is new.");
+    sections.push("- Test-data under `ui/test-data/<feature>-data.ts` (inputs + expected).");
+    sections.push("- Optional new feature tag in `core/test-tags.ts` — add only when the feature is new.");
     sections.push("");
     sections.push("Return code as unified diff (one hunk per file) so the orchestrator can write it directly.");
 

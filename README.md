@@ -35,7 +35,7 @@ app.
 | ⚡ **Parallel execution** | `--workers 1–10`. Workers share `storageState`. Build time drops 5–10×. |
 | 👻 **Headless by default** | CI runs headless; `HEADED` flips to headed for debugging. |
 | 🎞️ **Trace · video · screenshot** | Playwright auto-retains all three on failure → `trace.zip` opens in the Inspector for time-travel debugging. |
-| 🌐 **Multi-environment** | `cross-env test_env=dev\|test\|prod` + `dotenv` (resolver in `helper/load-env.ts`; default `test`). Same suite, any env. |
+| 🌐 **Multi-environment** | `cross-env test_env=dev\|test\|prod` + `dotenv` (resolver in `core/load-env.ts`; default `test`). Same suite, any env. |
 | 🏗️ **CI pipelines (3 providers)** | Ready-to-copy samples for **Jenkins · GitHub Actions · GitLab CI** in [`ci/`](ci/README.md) — same canonical Playwright command, same artifacts, same `yarn report:all` AI-QA pipeline. Jenkins is a parameterised declarative pipeline (`BRANCH`, `TAGS`, `ENVIRONMENT`, `INVERT_BUGS`, `REFRESH_STORAGE`, `RETRIES`, `WORKERS`, `HEADED`; Allure + artifact archive + HTML stats e-mail). |
 | 🏷️ **Tag-based trigger** | `trigger-jenkins.js <tag>` fires the regression job by tag (== Jira label) from PR / CI / qa-agent. `--no-wait` + `--status` for long builds. |
 | 📧 **E-mail + Allure** | Per-build HTML summary mailed to stakeholders, plus the per-build Allure report. |
@@ -57,7 +57,7 @@ app.
    npx playwright install --with-deps
    ```
 
-2. **Fill in the SUT login** — `helper/authenticate-set-up.ts` is a stub
+2. **Fill in the SUT login** — `ui/helpers/authenticate-set-up.ts` is a stub
    with a marked TODO block. Replace it with your app's sign-in flow.
 
 3. **Set per-env values** — copy the template and edit:
@@ -72,8 +72,8 @@ app.
    # JIRA_URL=, JIRA_EMAIL=, JIRA_TOKEN=, JIRA_PROJECT=
    ```
 
-5. **Write your first spec** — copy `tests/sample/sample.spec.ts` and
-   `page-objects/sample/sample-page.ts`, adapt to your screens, then:
+5. **Write your first spec** — copy `ui/tests/sample.spec.ts` and
+   `ui/page-objects/sample/sample-page.ts`, adapt to your screens, then:
    ```bash
    yarn test:test
    ```
@@ -83,17 +83,13 @@ app.
 ## Repository layout
 
 ```
-config/        Playwright config (storageState, reporters, projects).
-environments/  .env.example + .env.jira.example (per-env overrides).
-helper/        ActionKeyword (single keyword layer), global-setup,
-               authenticate-set-up, jira-* helpers, test-tags, test.ts
-               (extended test with auto-fixture for bug reporting).
-page-objects/  BasePage + your per-screen classes. `sample/` is an example.
-test-data/    Inputs + expected values for specs.
-tests/         Specs, tagged with `tags(TAGS.X, ...)` — api/ grpc/ mobile/ mobile-web/ sample/.
-api/           REST API testing — service objects + zod + MSW/Express mocks (api/README.md).
-grpc/          gRPC testing — sample casino proto + client + mock (grpc/README.md).
-mobile/        Native (Appium) screen objects + capabilities (mobile/README.md).
+core/          Shared: env resolver, test-tags, base test (Jira-bug fixture), jira reporter (@core/*).
+ui/            Playwright web module — ui/page-objects/ helpers/ tests/ ui/test-data/ + api-support (ui/README.md).
+api/           Playwright-free API testing — rest/ (axios) · grpc/ · graphql/ (api/README.md).
+mobile/        Appium native + Playwright mobile-web (mobile/README.md).
+performance/   Load/perf — k6 (primary) + JMeter sample (performance/README.md).
+config/        playwright.base.ts + root config; each module has its own playwright.config.ts.
+environments/  .env.example + per-env + .env.jira.example.
 ci/            Sample CI pipelines (jenkins/, github-actions/, gitlab/) — see ci/README.md.
 docs/          Architecture / execution-flow / capabilities diagrams (HTML
                + PNG for slides). docs/ai/ tracks qa-agent progress.
@@ -107,13 +103,13 @@ docs/          Architecture / execution-flow / capabilities diagrams (HTML
 
 | Task | File |
 |------|------|
-| Your app's login flow | `helper/authenticate-set-up.ts` (TODO block) |
+| Your app's login flow | `ui/helpers/authenticate-set-up.ts` (TODO block) |
 | Per-env URLs / creds | `environments/.env.<env>` |
 | Jira credentials | `environments/.env.jira` (gitignored / not committed for real projects) |
-| Feature tags | `helper/test-tags.ts` (add one tag per Jira label) |
-| Custom Playwright wrappers | `helper/action-keywords.ts` (single keyword layer) |
-| Page objects | `page-objects/<feature>/<screen>-page.ts` |
-| Specs | `tests/<feature>/<scenario>.spec.ts` (import `test` from `helper/test`) |
+| Feature tags | `core/test-tags.ts` (add one tag per Jira label) |
+| Custom Playwright wrappers | `ui/helpers/action-keywords.ts` (single keyword layer) |
+| Page objects | `ui/page-objects/<feature>/<screen>-page.ts` |
+| Specs | `<module>/tests/<feature>.spec.ts` (import `test` from `@core/test`) |
 | Claude qa-agent conventions | `.claude/skills/qa-agent/references/framework-conventions.md` |
 | Codex qa-agent conventions | `.agents/skills/qa-agent/references/framework-conventions.md` |
 

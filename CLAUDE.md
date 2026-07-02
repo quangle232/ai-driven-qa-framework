@@ -7,15 +7,15 @@ run → report), **4 read-first MCP servers**, regression + bug **HTML/DOCX** re
 generators, a framework-wide failure → Jira-bug reporter, and sample CI pipelines
 (Jenkins · GitHub Actions · GitLab CI).
 
-> Drop this into any web project. Nothing here is tied to a specific app — `tests/sample/`,
-> `page-objects/sample/`, `test-data/sample-data.ts` are placeholders to replace. Search for
+> Drop this into any web project. Nothing here is tied to a specific app — `ui/tests/`,
+> `ui/page-objects/sample/`, `ui/test-data/sample-data.ts` are placeholders to replace. Search for
 > `sample` / `example` to find what to swap.
 
 ## First time on a new project
 1. `yarn install`, then `cp environments/.env.test.example environments/.env.test` and fill the
    SUT URL + login. (`test_env` picks the file: dev|test|prod, default test. Jira/Figma vars
    optional — see `environments/.env.jira.example`.)
-2. Set the SUT base URL + auth in `helper/auth-config.ts` / `helper/global-setup.ts`.
+2. Set the SUT base URL + auth in `ui/helpers/auth-config.ts` / `ui/helpers/global-setup.ts`.
 3. Replace the `sample` page object + spec with your app's first flow (keep the conventions).
 4. Read `.claude/skills/qa-agent/SKILL.md` before generating cases/code with the agent.
 
@@ -46,12 +46,13 @@ Read-only by default. Regenerate config: `yarn aiqa:mcp:config`; catalogue: `yar
   `bug-report.html`/`.md`/`.docx`. `yarn report:all` runs the fuller AI-QA pipeline.
   Playwright's own report: `test-output/html` (`yarn open:report`).
 
-## Layout
-- Specs: `tests/**/*.spec.ts` · Page objects: `page-objects/` (extend `base-page.ts`)
-- Test surfaces (each has a README): UI (`tests/sample`) · API (`api/`, `tests/api`) · gRPC (`grpc/`, `tests/grpc`) · mobile (`mobile/` + `tests/mobile` native, `tests/mobile-web` emulation)
-- Interaction layer: `helper/action-keywords.ts` (`ActionKeyword`) — never call `page.locator` in a spec
-- Tags: `helper/test-tags.ts` (`TAGS`, `tags()`) · Test data: `test-data/`
-- Auth/setup: `helper/global-setup.ts` + `helper/auth-config.ts`; storage states in `.auth/`
+## Layout — modules (each self-contained: helpers/ · tests/ · conventions.md · memory/ · its own playwright.config.ts to run in isolation)
+- `ui/` — Playwright web: `ui/page-objects/`, `helpers/action-keywords.ts` (single keyword layer), `tests/`, `ui/test-data/`, `api-support.ts` (API to support web tests)
+- `api/` — Playwright-free clients under the Playwright runner: `rest/` (axios), `grpc/`, `graphql/` — client/service-object model, never the transport in a spec
+- `mobile/` — Appium native + Playwright mobile-web · `performance/` — k6 + JMeter
+- `core/` — shared: env, `test-tags.ts`, base `test.ts` (Jira-bug fixture), jira reporter — via `@core/*`
+- Imports use aliases `@core/* @ui/* @api/* @mobile/*`; run one module: `playwright test -c <module>/playwright.config.ts`
+- Auth/setup: `ui/helpers/global-setup.ts` + `ui/helpers/auth-config.ts`; storage states in `.auth/`
 - Config: `config/playwright.config.ts` · AI agent: `src/ai-qa-agent/` · MCP: `mcp/`
 - CI samples (read `ci/README.md` to align a pipeline): `ci/` → `jenkins/` · `github-actions/` · `gitlab/`
 - Tracking docs (read before generating, update after): `docs/ai/{memory,test-case,navigation}.md`

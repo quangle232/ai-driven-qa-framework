@@ -6,7 +6,7 @@
  * the build under test (local path, URL, or a cloud app id). Nothing is
  * hard-coded — everything comes from env (see environments/.env.example).
  */
-import ENV from "../../helper/env-config";
+import ENV from "@core/env-config";
 
 export type AppiumCapabilities = Record<string, unknown>;
 

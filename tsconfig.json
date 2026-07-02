@@ -10,16 +10,21 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "strict": false,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["core/*"],
+      "@ui/*": ["ui/*"],
+      "@api/*": ["api/*"],
+      "@mobile/*": ["mobile/*"]
+    }
   },
   "include": [
     "config/**/*.ts",
-    "helper/**/*.ts",
-    "page-objects/**/*.ts",
-    "test-data/**/*.ts",
-    "tests/**/*.ts",
+    "core/**/*.ts",
+    "ui/**/*.ts",
     "api/**/*.ts",
-    "grpc/**/*.ts",
-    "mobile/**/*.ts"
+    "mobile/**/*.ts",
+    "performance/**/*.ts"
   ]
 }
