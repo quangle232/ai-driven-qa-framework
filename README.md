@@ -42,7 +42,7 @@ app.
 | 🤖 **qa-agent AI skill** | `.claude/skills/qa-agent/` for Claude and `.agents/skills/qa-agent/` for Codex — given a Jira `user_story_key`, generate manual + automation test cases, generate Playwright code in this framework's conventions, run + report. Status-gated, search-then-reuse Jira bug dedupe, 3 sub-tasks on completion. |
 | 🧠 **AI QA Agent runtime** | `src/ai-qa-agent/` — deterministic watcher + failure clustering + LLM-backed diagnosis (bounded recursive loops) + stakeholder HTML report. `yarn aiqa:run-regression` runs Playwright + a live failure scanner sub-agent + auto-generates a self-contained HTML report for PM/BO. See [src/ai-qa-agent/README.md](src/ai-qa-agent/README.md). |
 | 🔌 **MCP servers** | `mcp/` — 4 read-only servers (qa-report, framework-context, memory, test-runner) exposing 25 tools so Claude Code / Cursor / Windsurf can query the framework directly. Memory persists known issues / flaky history / domain glossary for the LLM to recall. See [mcp/README.md](mcp/README.md). |
-| 🧪 **API · gRPC · mobile testing** | Beyond UI: REST (Service-Object Model + zod validation + MSW & Express/Prism mocks), gRPC (sample casino proto with all RPC types + in-process mock server), and mobile (Appium native + Playwright mobile-web, parallel drivers). All on the **one** Playwright runner → same Allure / Jira-bug / AI-QA / CI pipeline. See [api/](api/README.md), [grpc/](grpc/README.md), [mobile/](mobile/README.md). |
+| 🧪 **API · gRPC · mobile testing** | Beyond UI: REST (Service-Object Model + zod validation + MSW & Express/Prism mocks), gRPC (sample casino proto with all RPC types + in-process mock server), and mobile (Appium native + Playwright mobile-web, parallel drivers). All on the **one** Playwright runner → same Allure / Jira-bug / AI-QA / CI pipeline. See [api/](api/README.md), [api/grpc/](api/grpc/README.md), [mobile/](mobile/README.md). |
 | 🛡️ **Patch-guard** | `yarn aiqa:guard` — deterministic safety gate that refuses generated code violating framework conventions (wrong import, hard waits, missing `TAGS.REGRESSION`, raw `this.page.click`, hardcoded secrets, path traversal). Runs automatically on every `aiqa:generate-automation --apply`. |
 
 ---
@@ -130,6 +130,30 @@ docs/          Architecture / execution-flow / capabilities diagrams (HTML
 | `yarn aiqa:mcp:list` / `:config` / `:start` | List MCP servers, generate Claude Code / Cursor config snippet, start a server on stdio. |
 
 Full migration / setup guide: **[INSTALL.md](INSTALL.md)**.
+
+---
+
+## Skills — drive the framework in plain language
+
+22 auto-invocable skills ship for **both Claude Code** (`.claude/skills/`) and **Codex**
+(`.agents/skills/`) — identical, mirror-verified. You don't run them by hand: describe what
+you want and the tool picks the matching skill by its trigger phrases (or type `/<name>`).
+Each is a focused entry point into the **qa-agent** engine + per-module conventions.
+Full catalogue: **[.claude/skills/README.md](.claude/skills/README.md)**.
+
+| Stage | Skills — what they do |
+|---|---|
+| **Onboard & connect** | `setup` (deps/env/auth/health) · `mcp-setup` (Jira/Figma/Playwright/TestRail MCPs) · `ci-setup` (wire a `ci/` pipeline) · `new-module` (scaffold a new surface) |
+| **Design cases** | `user-story-test` (full flow from a Jira story) · `create-test-cases` (design + approval only) · `explore-app` (map selectors → nav memory) · `coverage-gap` (find untested AC/surfaces) · `data-factory` (seed/teardown test data) |
+| **Automate** | `automation-generate` (cases → convention code, anti-dup) · `scaffold-screen` (one POM/service/client/screen) · `visual-regression` (screenshot baselines + diffs) |
+| **Run & report** | `run-tests` (right module/markers/env) · `read-report` (cluster + root-cause + Allure) · `qa-status` (one-page health/standup) |
+| **Triage & fix** | `review-code` (convention review + guard) · `fix-test` (repair test-side, no auto-heal) · `flaky-triage` (flake vs real bug) · `create-bug` (file a deduped Jira bug) |
+| **Publish & maintain** | `publish-testcases` (Excel · Xray · TestRail) · `update-conventions` (audit docs ↔ code + mirror parity) |
+| **Engine** | `qa-agent` (the AI-QA engine the above delegate to) |
+
+Everything runs on the modules (`ui/ api/ mobile/ performance/`), the `yarn aiqa:*` CLI, and
+the `aiqa-*` MCP servers — respecting the single-keyword-layer rule, `tag == Jira label`,
+patch-guarded paths, the human-approval loop, and "leave the SUT clean".
 
 ---
 

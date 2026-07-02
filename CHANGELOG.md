@@ -10,6 +10,23 @@ This framework versions independently of any consuming product repo.
 ## [Unreleased]
 
 ### Added
+- **Skills library — 22 auto-invocable skills for Claude Code + Codex.** Focused,
+  plain-language entry points in `.claude/skills/` (mirror `.agents/skills/`, identical),
+  each delegating to the qa-agent engine + per-module conventions/memory. Covers the QA
+  lifecycle: onboard (`setup`, `mcp-setup`, `ci-setup`, `new-module`), design
+  (`user-story-test`, `create-test-cases`, `explore-app`, `coverage-gap`, `data-factory`),
+  automate (`automation-generate`, `scaffold-screen`, `visual-regression`), run/report
+  (`run-tests`, `read-report`, `qa-status`), triage (`review-code`, `fix-test`,
+  `flaky-triage`, `create-bug`), maintain (`publish-testcases`, `update-conventions`), and
+  the `qa-agent` engine. Adds `@visual` tag. Catalogue: `.claude/skills/README.md`.
+- **Modular architecture — isolated per-surface modules.** Restructured into self-contained
+  modules that each run standalone: `core/` (shared env/tags/base test/jira via `@core/*`),
+  `ui/` (all Playwright web), `api/{rest,grpc,graphql}`, `mobile/`, `performance/` (k6 +
+  JMeter). New **GraphQL** surface (graphql-request + zod + msw mock) and **performance**
+  surface (k6 thresholds + JMeter sample). tsconfig path aliases `@core/@ui/@api/@mobile`;
+  per-module `conventions.md` + `memory/` + `README.md` + `playwright.config.ts`. Adds
+  `@graphql`/`@performance`/`@visual` tags and `test:ui`/`test:api[:rest|grpc|graphql]`/
+  `test:mobile:*`/`perf:k6`/`perf:jmeter` scripts.
 - **`ci/` — sample CI pipelines for three providers.** `ci/jenkins/` (moved
   from `jenkins/`), `ci/github-actions/regression.yml` + `pr-smoke.yml`, and
   `ci/gitlab/.gitlab-ci.yml`. All run the same canonical Playwright command,
@@ -34,6 +51,16 @@ This framework versions independently of any consuming product repo.
   `ci/`. Updated every reference (docs, qa-agent skill, patch-guard, MCP guard)
   and the pipeline's internal `collect-playwright-stats.js` path; the
   patch-guard / builder guardrail now protects the whole `ci/` tree.
+- **Relocated everything into modules (the modular refactor above).** `helper/` split into
+  `core/` (shared) + `ui/helpers/`; `page-objects/`/`test-data/`/`tests/` → `ui/`; top-level
+  `grpc/` → `api/grpc/`; the REST layer rewritten from Playwright `request` to a
+  Playwright-free **axios** client under `api/rest/` (the old Playwright-`request` client is
+  now `ui/helpers/api-support.ts` for seeding web tests). Repointed the engine
+  (patch-guard protected paths, existing-code-index scanner, framework-context), the qa-agent
+  skill (framework-conventions index → per-module `conventions.md`), and root docs. Imports
+  now use `@core/@ui/@api/@mobile` aliases. Renamed the `setup-project` skill → `setup`.
+- **Envs renamed `sandbox`/`uat` → `dev`/`test`/`prod`** (`test_env` selects
+  `environments/.env.<env>`, default `test`).
 
 ---
 
