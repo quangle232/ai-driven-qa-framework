@@ -6,12 +6,12 @@ in Phase 0 and updates it in Phase 6 after every generation / run.
 ## Generated work
 | Date | User story | Feature | Tag / Jira label | Artifacts |
 |------|-----------|---------|------------------|-----------|
-| 2026-06-01 | PROJ-1 | Login | @auth | tests/auth/login.spec.ts; page-objects/auth/login-page.ts; test-data/login-data.ts |
+| 2026-06-01 | PROJ-1 | Login | @auth | tests/auth/login.spec.ts; ui/page-objects/auth/login-page.ts; ui/test-data/login-data.ts |
 
 ## Decisions
 - 2026-06-01 — `LoginPage` extends `BasePage`; no separate auth fixture
   needed (storageState carries the session for subsequent specs).
-- 2026-06-01 — Added `TAGS.AUTH = "@auth"` to `helper/test-tags.ts` to
+- 2026-06-01 — Added `TAGS.AUTH = "@auth"` to `core/test-tags.ts` to
   match the Jira label.
 
 ## Known gaps

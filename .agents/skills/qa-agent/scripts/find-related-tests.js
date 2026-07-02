@@ -7,7 +7,7 @@
  *
  * Specs reference tags through the TAGS map (e.g. tags(TAGS.SERVICE_REQUEST)),
  * not the literal "@service-request" string. This script reads
- * helper/test-tags.ts, resolves the tag value to its TAGS key, then scans
+ * core/test-tags.ts, resolves the tag value to its TAGS key, then scans
  * tests/ for that key.
  *
  * Usage:
@@ -25,7 +25,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** Walk up from `start` until a directory containing helper/test-tags.ts is found. */
+/** Walk up from `start` until a directory containing core/test-tags.ts is found. */
 function findRepoRoot(start) {
     let dir = start;
     while (dir !== dirname(dir)) {
@@ -35,7 +35,7 @@ function findRepoRoot(start) {
     return null;
 }
 
-/** Parse helper/test-tags.ts into { valueToKey, keyToValue } maps. */
+/** Parse core/test-tags.ts into { valueToKey, keyToValue } maps. */
 function parseTagsMap(tagsFile) {
     const src = readFileSync(tagsFile, 'utf8');
     const valueToKey = {};
@@ -91,7 +91,7 @@ function main() {
 
     const repoRoot = findRepoRoot(__dirname) || findRepoRoot(process.cwd());
     if (!repoRoot) {
-        console.error('Error: could not locate the repo root (helper/test-tags.ts not found).');
+        console.error('Error: could not locate the repo root (core/test-tags.ts not found).');
         process.exit(2);
     }
 

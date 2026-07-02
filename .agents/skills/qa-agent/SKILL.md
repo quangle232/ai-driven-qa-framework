@@ -51,8 +51,13 @@ status gate and start at Phase 2. **Never skip the human approval loop.**
 - Read `docs/ai/memory.md`, `docs/ai/test-case.md`, `docs/ai/navigation.md` (create from
   `./examples/` if missing). Call the `aiqa-framework-context` MCP for conventions + the
   `TAGS` map + the existing-code index.
-- Read the live framework: `helper/action-keywords.ts`, `helper/test-tags.ts`,
-  `page-objects/`, `api/`, `grpc/`, `mobile/`, `tests/`.
+- **Per-module context**: read the target surface's `conventions.md` + load its `memory/` —
+  UI (`ui/`), API (`api/` + `rest|grpc|graphql`), mobile (`mobile/`), performance
+  (`performance/`); shared spine in `core/`. Load `<module>/memory/` alongside `docs/ai/`
+  (see `tracking-files.md`).
+- Read the live framework at the module you'll touch: `core/test-tags.ts`,
+  `ui/helpers/action-keywords.ts`, `ui/page-objects/`, `api/{rest,grpc,graphql}/`,
+  `mobile/`, and each module's `tests/`.
 - Goal: know which flows / page objects / services / screens / cases already exist so later
   phases **reuse, never regenerate** (anti-duplication).
 
@@ -105,7 +110,7 @@ For each **automatable, approved** case NOT already covered:
 - Discover real selectors with the Playwright MCP (`data-zcqa → data-test-id → data-id → data-title`;
   never invent). Generate per `framework-conventions.md`, by surface (UI POM / API service /
   gRPC client / mobile screen). New shared keywords go INTO `ActionKeyword` — never touch the
-  transport in a spec. Tag `@regression` + the feature tag; add missing tags to `helper/test-tags.ts`.
+  transport in a spec. Tag `@regression` + the feature tag; add missing tags to `core/test-tags.ts`.
 - **Anti-duplication is mandatory:** check `find-related-tests.js`, the existing-code index, and the
   tracking files first; if a page object / spec / case already exists, **extend or reuse it** — do
   not regenerate. Validate every generated file with `yarn aiqa:guard` before finalising.
@@ -137,7 +142,7 @@ For each **automatable, approved** case NOT already covered:
   parent **story only**, never to subtasks.
 - **Status gate.** Do not generate or run automation for a story that is not `READY FOR QA`.
 - **One review table.** Phase 4 = a single exact table; no analytics / distribution / candidate tables.
-- **Generated code follows `framework-conventions.md` exactly**; comments in English; data in `test-data/`.
+- **Generated code follows `framework-conventions.md` exactly**; comments in English; data in `ui/test-data/`.
 - **Never hard-fail mid-flow** — every MCP / Jira / export step has a `docs/ai/` fallback.
 - Update the `docs/ai/` tracking files after every generation and run.
 

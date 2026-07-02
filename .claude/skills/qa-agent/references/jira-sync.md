@@ -21,7 +21,7 @@ Read the story Status (Phase 1) and normalise case-insensitively
   ```
   node .claude/skills/qa-agent/scripts/trigger-jenkins.js "@crm|@add-case" --branch=main --no-wait
   ```
-- Same string feeds `find-related-tests.js`. Missing feature tag → add it to `helper/test-tags.ts`.
+- Same string feeds `find-related-tests.js`. Missing feature tag → add it to `core/test-tags.ts`.
 - `tag == Jira label` links Jira ↔ Playwright `--grep` ↔ CI ↔ the test-management tool.
 
 ---

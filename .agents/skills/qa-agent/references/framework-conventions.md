@@ -5,23 +5,40 @@ live framework — read the referenced source files before generating code.
 
 ## 1. Project structure
 ```
-config/        Playwright configs (playwright.config.ts = web)
+core/          shared: env, test-tags, base test (Jira-bug fixture), jira reporter — via @core/*
+ui/            Playwright web — ui/page-objects/ helpers/(action-keywords) tests/ ui/test-data/ (ui/conventions.md)
+api/rest/      REST (axios) — clients/ services/ models/(zod) mock/ (api/conventions.md)
+api/grpc/      gRPC — proto/ clients/ mock/ models/
+api/graphql/   GraphQL — client.ts operations.ts models/ mock/
+mobile/        Appium native + Playwright mobile-web — screen-objects/ helpers/ tests/
+performance/   k6 + JMeter load tests
+config/        playwright.base.ts + root config; each module has <module>/playwright.config.ts
 environments/  .env.dev / .env.test / .env.prod (selected at runtime via test_env)
-helper/        ActionKeyword, global-setup, auth, date-helper, test-tags, ...
-page-objects/  BasePage + sut/ page object classes
-test-data/     input + expected data modules
-tests/         specs — UI in tests/sample/; also api/ grpc/ mobile/ mobile-web/
-api/           REST API testing — clients/ services/ models/ mock/ (see api/README.md)
-grpc/          gRPC testing — proto/ clients/ mock/ (see grpc/README.md)
-mobile/        native mobile — capabilities/ screen-objects/ (see mobile/README.md)
-ci/            Sample CI pipelines: jenkins/, github-actions/, gitlab/ (see ci/README.md)
-docs/ai/       qa-agent tracking files (memory.md, test-case.md, navigation.md)
+ci/            Sample CI pipelines (see ci/README.md)
+docs/ai/       qa-agent tracking; each module also has memory/
+
+Imports use path aliases: @core/* @ui/* @api/* @mobile/* (tsconfig paths).
 ```
 
+## 1a. Per-module conventions & memory — READ FIRST for the target surface
+Every surface is a self-contained module with its OWN `conventions.md`, `memory/`,
+`helpers/`, `README.md`, and `playwright.config.ts`. Before generating for a
+surface, READ that module's `conventions.md` and load its `memory/` (plus the
+cross-story `docs/ai/`):
+- UI → `ui/conventions.md` · `ui/memory/`
+- API → `api/conventions.md` (+ `api/rest|grpc|graphql/README.md`) · `api/memory/`
+- Mobile → `mobile/conventions.md` · `mobile/memory/`
+- Performance → `performance/conventions.md` · `performance/memory/`
+- Shared spine (env · tags · base `test` · jira reporter) → `core/` (`core/README.md`) —
+  imported via `@core/*`; NEVER generate into it (patch-guarded).
+
+The sections below are the framework-wide defaults; a module's `conventions.md`
+refines them for that surface.
+
 ## 2. Page Object Model
-- One class per screen, file `page-objects/sut/<name>-page.ts`.
+- One class per screen, file `ui/page-objects/<name>-page.ts`.
 - Every page object `extends BasePage` — this gives `this.page` and
-  `this.actionKeyword` (see `page-objects/base-page.ts`).
+  `this.actionKeyword` (see `ui/page-objects/base-page.ts`).
 - Group locators in `private readonly` objects near the top. Two patterns are
   in use:
   - `fields` — the SUT field `data-id` values (the bare id string, no selector
@@ -35,7 +52,7 @@ docs/ai/       qa-agent tracking files (memory.md, test-case.md, navigation.md)
 Skeleton:
 ```ts
 import { BasePage } from '../base-page';
-import { SomeInput } from '../../test-data/some-data';
+import { SomeInput } from '../../ui/test-data/some-data';
 
 /**
  * SomePage - <screen description>.
@@ -60,7 +77,7 @@ export class SomePage extends BasePage {
 ```
 
 ## 3. ActionKeyword — the single keyword layer
-- `helper/action-keywords.ts` is the ONLY place that calls the Playwright API
+- `ui/helpers/action-keywords.ts` is the ONLY place that calls the Playwright API
   (`page.locator`, `click`, `fill`, `expect`, …).
 - In page objects, NEVER call `page.locator` directly. Use the wrappers:
   `waitAndClick`, `waitAndFill`, `waitAndGetText`, `waitAndGetValue`,
@@ -88,7 +105,7 @@ export class SomePage extends BasePage {
   reload (server-side automation), use `verifyElementVisibleWithReload`.
 
 ## 6. Tags & the Jira label link
-- `helper/test-tags.ts` exports the `TAGS` map and the `tags(...)` helper.
+- `core/test-tags.ts` exports the `TAGS` map and the `tags(...)` helper.
 - A test declares its tags as the second argument:
   `tags(TAGS.REGRESSION, TAGS.SMOKE, TAGS.AUTH, TAGS.P0)`.
 - Tag categories: type (`@regression`, `@smoke`), priority (`@P0`/`@P1`/`@P2`),
@@ -100,10 +117,10 @@ export class SomePage extends BasePage {
   `@`-prefixed) — keep every tag in this one file.
 
 ## 7. Spec conventions
-- Location: `tests/sample/<feature>.spec.ts`, kebab-case file name. Generated
+- Location: `ui/tests/<feature>.spec.ts`, kebab-case file name. Generated
   specs go here so the Jenkins job (`TEST_FOLDER=sample`) picks them up.
 - Imports: `import { test, expect } from '@playwright/test';` and
-  `import { TAGS, tags } from '../../helper/test-tags';`.
+  `import { TAGS, tags } from '../../core/test-tags';`.
 - No per-test login — authentication runs once in `global-setup` and the session
   is reused via `use.storageState`. Start the test by opening the app with that
   saved session (e.g. `loginPage.openDeskApp()`).
@@ -113,8 +130,8 @@ export class SomePage extends BasePage {
 - A file-top JSDoc block explains the scenario and which AC it covers.
 
 ## 8. Test data
-- Inputs and expected values live in `test-data/` modules, not inline in specs.
-- A generated spec imports its data from `test-data/<feature>-data.ts`.
+- Inputs and expected values live in `ui/test-data/` modules, not inline in specs.
+- A generated spec imports its data from `ui/test-data/<feature>-data.ts`.
 
 ## 9. Comments
 - All code comments in English — concise, explaining "why", not "what".
@@ -143,18 +160,18 @@ export class SomePage extends BasePage {
 Beyond UI, the framework tests REST, gRPC, and mobile — all on the SAME
 Playwright runner, each mirroring POM's "object model + single keyword layer":
 
-- **API** (`tests/api`, import `helper/api/test-api`): call `api/services/*`
+- **API** (`api/rest/tests`, import `api/rest/helpers/test-api`): call `api/services/*`
   (Service-Object Model), never the raw client. `api/clients/api-client.ts` is the
   only HTTP layer; validate responses with the `zod` models in `api/models`.
   Mocks: MSW (node-`fetch` specs) + the Express server (Playwright-`request` specs).
-- **gRPC** (`tests/grpc`, import `helper/grpc/test-grpc`): call `grpc/clients/*`,
+- **gRPC** (`api/grpc/tests`, import `api/grpc/helpers/test-grpc`): call `api/grpc/clients/*`,
   set a deadline on every call, assert gRPC STATUS CODES (not just payloads),
-  auth via metadata. The mock implements `grpc/proto`.
-- **Mobile**: native (`tests/mobile`, import `helper/mobile/test-mobile`) uses
+  auth via metadata. The mock implements `api/grpc/proto`.
+- **Mobile**: native (`mobile/tests`, import `mobile/helpers/test-mobile`) uses
   Screen Objects + `MobileActionKeyword` (accessibility-id-first) and is
-  skip-gated; mobile-web (`tests/mobile-web`) reuses the web POM.
+  skip-gated; mobile-web (`mobile/tests`) reuses the web POM.
 
 Tags: `@api` / `@grpc` / `@mobile` (+ `@mobile-web` / `@mobile-native`) on top of
-`@regression`. Do NOT generate into `api/contracts/` or `grpc/proto/` (contracts
+`@regression`. Do NOT generate into `api/contracts/` or `api/grpc/proto/` (contracts
 are source-of-truth and patch-guarded). Full rules: `api/README.md`,
 `grpc/README.md`, `mobile/README.md`.

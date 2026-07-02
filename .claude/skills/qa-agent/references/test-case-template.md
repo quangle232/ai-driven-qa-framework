@@ -46,7 +46,7 @@ Every generated test case (manual or automation) uses these fields:
   "automatable": "Y",
   "status": "Generated",
   "acIds": ["AC1"],
-  "specFile": "tests/sample/service-request.spec.ts"
+  "specFile": "ui/tests/service-request.spec.ts"
 }
 ```
 
