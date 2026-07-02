@@ -141,19 +141,32 @@ you want and the tool picks the matching skill by its trigger phrases (or type `
 Each is a focused entry point into the **qa-agent** engine + per-module conventions.
 Full catalogue: **[.claude/skills/README.md](.claude/skills/README.md)**.
 
-| Stage | Skills — what they do |
-|---|---|
-| **Onboard & connect** | `setup` (deps/env/auth/health) · `mcp-setup` (Jira/Figma/Playwright/TestRail MCPs) · `ci-setup` (wire a `ci/` pipeline) · `new-module` (scaffold a new surface) |
-| **Design cases** | `user-story-test` (full flow from a Jira story) · `create-test-cases` (design + approval only) · `explore-app` (map selectors → nav memory) · `coverage-gap` (find untested AC/surfaces) · `data-factory` (seed/teardown test data) |
-| **Automate** | `automation-generate` (cases → convention code, anti-dup) · `scaffold-screen` (one POM/service/client/screen) · `visual-regression` (screenshot baselines + diffs) |
-| **Run & report** | `run-tests` (right module/markers/env) · `read-report` (cluster + root-cause + Allure) · `qa-status` (one-page health/standup) |
-| **Triage & fix** | `review-code` (convention review + guard) · `fix-test` (repair test-side, no auto-heal) · `flaky-triage` (flake vs real bug) · `create-bug` (file a deduped Jira bug) |
-| **Publish & maintain** | `publish-testcases` (Excel · Xray · TestRail) · `update-conventions` (audit docs ↔ code + mirror parity) |
-| **Engine** | `qa-agent` (the AI-QA engine the above delegate to) |
+| Skill | Module / scope | Feature | Does | Short description |
+|---|---|---|---|---|
+| `setup` | All | Onboard | Onboard the framework | Install deps + browsers, provision `.env` files, wire the auth stub, optional MCPs, run health check |
+| `mcp-setup` | MCP | Onboard | Connect MCP servers | Add + authorize Jira/Figma/Playwright/TestRail + the 4 built-in `aiqa-*` servers |
+| `ci-setup` | CI | Onboard | Wire a CI pipeline | Activate a `ci/` sample (Jenkins · GitHub Actions · GitLab) with per-surface slices |
+| `new-module` | Framework | Onboard | Scaffold a new surface | Add a new testing module with the standard anatomy (config, alias, tags, scripts) |
+| `user-story-test` | All | Full flow | End-to-end from a Jira story | Design → approve → publish → generate + run → report (surface-routed) |
+| `create-test-cases` | All | Design | Design test cases | Canonical-JSON cases + review table; stops at human approval (no code) |
+| `explore-app` | UI | Design | Map the live SUT | Discover real selectors/routes via Playwright MCP → navigation memory |
+| `coverage-gap` | All | Design | Find coverage gaps | Specs/cases vs Jira AC + labels → uncovered AC, untagged specs, P0 holes |
+| `data-factory` | API · UI | Design | Seed test data | Typed deterministic factories + seed/teardown via API/gRPC; leaves the SUT clean |
+| `automation-generate` | All | Automate | Generate automation code | Cases → convention-compliant code (UI/API/gRPC/GraphQL/perf); anti-duplication |
+| `scaffold-screen` | All | Automate | Scaffold one object layer | One Page Object / API service / gRPC client / GraphQL ops / mobile screen |
+| `visual-regression` | UI | Automate | Add screenshot tests | Baselines + diff triage (mask/threshold), per-device; `@visual` |
+| `run-tests` | All | Run | Run a test slice | Pick module config + markers + env, apply shared-SUT discipline, then report |
+| `read-report` | All | Report | Analyze the last run | Cluster + root-cause failures with fixes; stakeholder summary + Allure |
+| `qa-status` | All | Report | One-page QA health | Pass-rate, flaky, coverage, open bugs + the one thing to fix first |
+| `review-code` | All | Triage | Review vs conventions | Single-layer rule, tags, no hard waits, anti-dup, schema; runs `aiqa:guard` |
+| `fix-test` | All | Triage | Repair a broken test | Fix test-side breakage (selector/wait/data) — never weakens asserts or auto-heals |
+| `flaky-triage` | All | Triage | Triage flaky tests | Flake vs real bug via run history + reruns; quarantine + record; never bugs a flake |
+| `create-bug` | All | Triage | File a Jira bug | Confirmed defect only — deduped, evidence-backed, linked to the story |
+| `publish-testcases` | All | Publish | Publish approved cases | Export to Excel · Xray · TestRail; attach to Jira; sync statuses after runs |
+| `update-conventions` | Framework | Maintain | Audit docs ↔ code | Drift check + `.claude`/`.agents` mirror parity; fixes the docs |
+| `qa-agent` | All | Engine | The AI-QA engine | parse AC → design → enrich → approve → publish → generate → run → report |
 
-Everything runs on the modules (`ui/ api/ mobile/ performance/`), the `yarn aiqa:*` CLI, and
-the `aiqa-*` MCP servers — respecting the single-keyword-layer rule, `tag == Jira label`,
-patch-guarded paths, the human-approval loop, and "leave the SUT clean".
+*Module / scope:* **All** = works across `ui/ api/ mobile/ performance/`; **Framework** = maintainer/scaffolding; **CI**/**MCP** = infra. Everything runs on the `yarn aiqa:*` CLI + the `aiqa-*` MCP servers, respecting the single-keyword-layer rule, `tag == Jira label`, patch-guarded paths, the human-approval loop, and "leave the SUT clean".
 
 ---
 
