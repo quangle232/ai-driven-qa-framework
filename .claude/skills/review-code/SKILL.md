@@ -22,6 +22,9 @@ conventions**. Block on any violation; be specific and cite file:line.
 - **Selectors**: `data-zcqa → data-test-id → data-id → data-title`; none invented.
 - **Validation**: REST/GraphQL responses validated with zod; gRPC asserts `StatusCode.*`.
 - **Anti-duplication**: reuses existing pages/services/specs (check the framework-context MCP) — no near-duplicate.
+- **CRUD / test-data lifecycle** (§12): precondition data created via API (not the UI) unless the
+  create IS the test; every created id tracked and deleted **via API** in `afterEach` (tolerates 404).
+  Reject a test that creates data with no teardown, or seeds preconditions by driving the UI.
 - **Patch-guarded paths untouched**: `core/`, `config/`, `ci/`, `api/grpc/proto/`, `api/rest/contracts/`,
   `ui/helpers/global-setup|auth-config|authenticate-set-up`, `environments/`, `.auth/`.
 - Comments in English; test data in `*/test-data` or `*/models`, not inline.

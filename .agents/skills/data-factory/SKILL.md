@@ -13,10 +13,15 @@ Give tests the data they need — reproducibly and without polluting the SUT.
   overrides (e.g. `makeUser({ email })`). Prefer `@faker-js/faker` for variety; **seed faker**
   for reproducibility. Keep them next to the surface's test-data.
 
-## Seeding (setup) + teardown
-- Seed via the surface client, NOT the UI when possible: `RestClient` (api-rest), gRPC client,
-  or `ui/helpers/api-support.ts` (Playwright `request`) to prep data for a web test.
-- Do it in a fixture / `beforeEach`; **tear down** what you created in `afterEach`.
+## Seeding (setup) + teardown — the CRUD lifecycle (framework-conventions §12)
+- **Precondition data → create via API, not the UI.** When a test only NEEDS data (search,
+  edit, list, a downstream flow), seed it with the surface client — `RestClient` (api-rest),
+  gRPC/GraphQL client, or `ui/helpers/api-support.ts` (Playwright `request`) for a web test —
+  in a fixture / `beforeEach`. Only drive the UI to create when the CREATE itself is the SUT
+  (then capture the new id from the POM).
+- **Always track + clean up via API.** Push every created id (and related resources) to an
+  array and delete them in `afterEach` **via API** — it runs even on failure; tolerate 404
+  so a half-failed test still cleans up. Never re-drive the UI to tear down.
 
 ## Rules (operating discipline — see docs/ai/LESSONS-LEARNED.md)
 - **Leave the SUT clean**: remove self-created fixtures, or assert against live totals — never

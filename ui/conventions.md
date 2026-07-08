@@ -12,4 +12,10 @@
   wrap blocks in `test.step`, data from `@ui/test-data/*`.
 - **Auth**: one-time sign-in in `global-setup.ts`; reused via `storageState`.
 - **api-support.ts**: use for API-assisted setup/teardown inside a web test only.
+- **CRUD / test data lifecycle**: if the test only NEEDS data (search/edit/list),
+  create the precondition **via API** (`ui/helpers/api-support.ts`), not the UI, then
+  exercise the UI. If the test IS the UI create, drive the UI and capture the new id.
+  EITHER way, track every created id and delete it **via API** in `afterEach` (runs on
+  failure too; tolerate 404) — leave the SUT clean. Full rule + skeleton:
+  `framework-conventions.md` §12; build payloads with the `data-factory` skill.
 - Tag every spec with `@ui` + `@regression` + a priority (`@P0/@P1/@P2`).

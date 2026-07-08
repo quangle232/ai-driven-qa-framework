@@ -155,6 +155,65 @@ export class SomePage extends BasePage {
   runner (`tsx` / `ts-node`) it will not execute. Keep generated skill scripts
   as `.js`.
 
+## 12. Test data lifecycle (CRUD) — precondition via API, ALWAYS clean up
+
+Any test that creates data on the SUT MUST track what it created and remove it in
+teardown **via API** — so the suite leaves the SUT clean (see `docs/ai/LESSONS-LEARNED.md`).
+There are two shapes; pick by what the test is actually verifying:
+
+**A — the test IS the create (Create/Update/Delete on the UI is the thing under test):**
+- Exercise create/edit/delete through the UI / POM as normal — that IS the SUT behaviour.
+- CAPTURE the new entity's id (and any related resource ids) — the POM method returns it
+  (from the success toast, URL, or the create response the page fires).
+- Track it and delete it **via API** in teardown. Do NOT re-drive the UI to clean up.
+
+**B — the test NEEDS data as a precondition (search / filter / edit / delete / list / a
+downstream flow), where creating it is NOT what you're testing:**
+- Create the precondition **via API**, not the UI — fast, deterministic, no UI flake.
+  Use `ui/helpers/api-support.ts` (Playwright `request`, reuses the web session) inside a UI
+  spec, or the `api/rest/services/*` (axios) / gRPC / GraphQL client in an API spec.
+- THEN exercise the functionality under test through the UI.
+- Track the created id(s) and delete them **via API** in teardown.
+
+Rules for BOTH:
+- **Track every id you create** (push to an array) and delete in `afterEach` via API —
+  teardown runs even when the test fails, so nothing leaks. Cleanup is API, never the UI.
+- **Idempotent teardown**: tolerate an already-deleted resource (swallow 404) so a
+  half-failed test still cleans up its other resources.
+- **Unique data per test** (faker / uuid) so parallel + `--retries` runs never collide.
+  Build the payloads with a factory — see the `data-factory` skill.
+- On a shared/demo SUT, assert against **live totals**, never hardcoded counts — self-created
+  fixtures cause reconciliation drift.
+
+```ts
+const createdIds: string[] = [];
+
+test.afterEach(async ({ request }) => {
+  // Clean up via API — runs even if the test failed; tolerate already-gone.
+  for (const id of createdIds.splice(0)) {
+    await apiSupport(request).deleteItem(id).catch(() => { /* already removed */ });
+  }
+});
+
+// B — precondition created via API, functionality exercised via UI
+test('search finds an existing item', tags(TAGS.REGRESSION, TAGS.SEARCH, TAGS.P1),
+  async ({ page, request }) => {
+    const item = await apiSupport(request).createItem(makeItem());  // precondition via API
+    createdIds.push(item.id);                                       // track for teardown
+
+    const searchPage = new SearchPage(page);
+    await searchPage.search(item.name);                             // UI = thing under test
+    await expect.soft(searchPage.results()).toContainText(item.name);
+  });
+
+// A — create IS the SUT: drive the UI, capture the id, still clean up via API
+test('create item via UI', tags(TAGS.REGRESSION, TAGS.ITEMS, TAGS.P0), async ({ page }) => {
+  const id = await new CreateItemPage(page).createItem(makeItem());  // POM returns new id
+  createdIds.push(id);                                               // track for API teardown
+  await expect.soft(new CreateItemPage(page).toast()).toContainText('Created');
+});
+```
+
 ## Multi-surface testing layers (API · gRPC · mobile)
 
 Beyond UI, the framework tests REST, gRPC, and mobile — all on the SAME

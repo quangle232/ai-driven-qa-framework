@@ -15,4 +15,9 @@ Never import `@playwright/test` in a client/service.
   `GRPC_MOCK=0` / `GRAPHQL_URL`.
 - **Tags**: `@api` (+ `@grpc` / `@graphql`) + `@regression` + a priority. Import
   `@core/test`, `@core/test-tags`, `@core/jira/jira-story`.
+- **CRUD / test data lifecycle**: the API layer is the preferred way to seed preconditions
+  for ANY surface (fast, deterministic) and to clean up. A test that creates data must track
+  every id and delete it **via a service** in `afterEach` (runs on failure; tolerate 404) —
+  leave the SUT clean. Unique payloads per test (faker/uuid). See `framework-conventions.md`
+  §12 + the `data-factory` skill.
 - **Do NOT edit** `api/rest/contracts/` or `api/grpc/proto/` (patch-guarded, source of truth).

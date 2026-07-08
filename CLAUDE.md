@@ -75,6 +75,9 @@ Read-only by default. Regenerate config: `yarn aiqa:mcp:config`; catalogue: `yar
 - `@bugs`-tagged tests assert CURRENTLY-BROKEN behaviour — **expected to fail** until fixed
   (executable proof). Green slice = `--grep-invert @bugs`.
 - `tag == Jira label` links Jira ↔ Playwright `--grep` ↔ CI (the `ci/` samples — Jenkins · GitHub Actions · GitLab).
+- **CRUD / test-data lifecycle** (framework-conventions §12): create PRECONDITION data via
+  API (not the UI) — only drive the UI to create when the create IS the test; either way
+  track every created id and delete it via API in `afterEach` (runs on failure; tolerate 404).
 - Code comments in English. Verify UI bugs with screenshot + DOM before declaring them.
 - Don't create accounts or type passwords into fields; the user does those.
 
