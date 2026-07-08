@@ -159,6 +159,8 @@ export class SomePage extends BasePage {
 
 Any test that creates data on the SUT MUST track what it created and remove it in
 teardown **via API** — so the suite leaves the SUT clean (see `docs/ai/LESSONS-LEARNED.md`).
+LIVE SAMPLE: `ui/tests/sample-crud.spec.ts` + `ui/helpers/sample-user-api.ts` +
+`makeSampleUser` in `ui/test-data/sample-data.ts` (runs against `yarn mock:api`).
 There are two shapes; pick by what the test is actually verifying:
 
 **A — the test IS the create (Create/Update/Delete on the UI is the thing under test):**

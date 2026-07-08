@@ -18,4 +18,5 @@
   EITHER way, track every created id and delete it **via API** in `afterEach` (runs on
   failure too; tolerate 404) — leave the SUT clean. Full rule + skeleton:
   `framework-conventions.md` §12; build payloads with the `data-factory` skill.
+  Live sample: `ui/tests/sample-crud.spec.ts` (+ `ui/helpers/sample-user-api.ts`).
 - Tag every spec with `@ui` + `@regression` + a priority (`@P0/@P1/@P2`).
