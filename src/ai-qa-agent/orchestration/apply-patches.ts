@@ -20,7 +20,15 @@ import type { FilePatch } from "../agents/automation-builder-agent";
 // core/test-tags.ts is the ONE core file patches may touch (additive tag
 // entries per the tag == Jira label convention); everything else in core/
 // stays off-limits via patch-guard.
-const ALLOWED_ROOTS = ["tests/", "page-objects/", "test-data/", "core/test-tags.ts"];
+const ALLOWED_ROOTS = [
+    // modular layout (this starter)
+    "ui/tests/", "ui/page-objects/", "ui/test-data/",
+    "api/rest/tests/", "api/grpc/tests/", "api/graphql/tests/",
+    "mobile/tests/", "mobile/screen-objects/",
+    // flat layout — kept for consuming repos that keep specs at the root
+    "tests/", "page-objects/", "test-data/",
+    "core/test-tags.ts",
+];
 
 export interface ApplyAction {
     path: string;
@@ -48,7 +56,7 @@ export function applyPatches(patches: FilePatch[], opts: ApplyOptions = {}): App
     for (const p of patches) {
         const norm = p.path.replace(/^[./\\]+/, "");
         if (!ALLOWED_ROOTS.some(r => norm.startsWith(r))) {
-            actions.push({ path: norm, action: "refused_outside_roots", reason: "not under tests/, page-objects/, or test-data/" });
+            actions.push({ path: norm, action: "refused_outside_roots", reason: "not under a module tests/, page-objects/, test-data/ root (or core/test-tags.ts)" });
             continue;
         }
 

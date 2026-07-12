@@ -21,6 +21,16 @@ export interface GuardViolation {
 }
 
 const ALLOWED_PREFIXES = [
+    // modular layout (this starter)
+    "ui/tests/",
+    "ui/page-objects/",
+    "ui/test-data/",
+    "api/rest/tests/",
+    "api/grpc/tests/",
+    "api/graphql/tests/",
+    "mobile/tests/",
+    "mobile/screen-objects/",
+    // flat layout — kept for consuming repos that keep specs at the root
     "tests/",
     "page-objects/",
     "test-data/",
@@ -80,16 +90,16 @@ function inspect(p: FilePatch): string | null {
         return `path is in the blocked list: ${norm}`;
     }
     if (norm !== TAG_CATALOGUE && !ALLOWED_PREFIXES.some(a => norm.startsWith(a))) {
-        return `path is outside the allowed roots (tests/, page-objects/, test-data/, core/test-tags.ts): ${norm}`;
+        return `path is outside the allowed roots (<module>/tests|page-objects|test-data, core/test-tags.ts): ${norm}`;
     }
 
-    // Spec-level checks
-    if (norm.startsWith("tests/") && norm.endsWith(".spec.ts")) {
+    // Spec-level checks — match specs in BOTH layouts (ui/tests/… and tests/…)
+    if (norm.endsWith(".spec.ts") && (norm.startsWith("tests/") || norm.includes("/tests/"))) {
         if (RAW_PLAYWRIGHT_IMPORT.test(p.content)) {
-            return "spec imports from '@playwright/test' — must import from 'helper/test'";
+            return "spec imports from '@playwright/test' — must import from '@core/test'";
         }
-        if (!/from\s+['"][^'"]*helper\/test['"]/.test(p.content)) {
-            return "spec missing import { test, expect } from 'helper/test'";
+        if (!/from\s+['"](?:@core\/test|[^'"]*(?:core|helper)\/test)['"]/.test(p.content)) {
+            return "spec missing import { test, expect } from '@core/test'";
         }
         if (TEST_SKIP.test(p.content)) {
             return "spec uses test.skip — forbidden by policy";
@@ -104,8 +114,8 @@ function inspect(p: FilePatch): string | null {
         }
     }
 
-    // Page object checks
-    if (norm.startsWith("page-objects/")) {
+    // Page/screen object checks — both layouts
+    if (norm.startsWith("page-objects/") || norm.includes("/page-objects/") || norm.includes("/screen-objects/")) {
         if (/this\.page\.(?:click|fill|type|press|hover|dblclick|check|uncheck|selectOption)\(/.test(p.content)) {
             return "page object calls this.page.* directly — must go through this.actionKeyword";
         }
