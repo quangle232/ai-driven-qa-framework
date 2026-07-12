@@ -138,7 +138,7 @@ function buildContextBlock(): string {
     sections.push("- Test-data under `ui/test-data/<feature>-data.ts` (inputs + expected).");
     sections.push("- Optional new feature tag in `core/test-tags.ts` — add only when the feature is new.");
     sections.push("");
-    sections.push("Return code as unified diff (one hunk per file) so the orchestrator can write it directly.");
+    sections.push("Return each file as FULL content inside the JSON patches[] array (never a diff) — the orchestrator writes patch.content to disk verbatim.");
 
     return sections.join("\n");
 }

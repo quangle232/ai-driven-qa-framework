@@ -489,7 +489,14 @@ async function cmdMcpStart(flags: Flags): Promise<number> {
     const entry = findServer(id);
     if (!entry) { process.stderr.write(`[aiqa:mcp:start] unknown server: ${id}\n`); return 2; }
     await entry.server.start();
-    return 0;
+    // start() resolves as soon as the stdio transport is connected — it does
+    // NOT block until the client disconnects. Returning here would let main()
+    // call process.exit(0) and kill the server instantly, so stay alive until
+    // the client closes stdin or the process is signalled (same pattern as
+    // cmdWatch).
+    process.on("SIGINT", () => process.exit(0));
+    process.on("SIGTERM", () => process.exit(0));
+    return new Promise<number>(() => { /* runs until the MCP client disconnects */ });
 }
 
 async function cmdDoctor(_flags: Flags): Promise<number> {

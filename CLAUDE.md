@@ -26,7 +26,7 @@ report → Jira sub-tasks. Its `references/` are the source of truth for HOW gen
 must look — read `framework-conventions.md` first.
 
 ## Skills — user-facing entry points (Claude + Codex)
-22 auto-invocable skills in `.claude/skills/` (Codex mirror `.agents/skills/`, identical) let
+23 auto-invocable skills in `.claude/skills/` (Codex mirror `.agents/skills/`, identical) let
 users drive the framework in plain language — each is a focused entry point that delegates to
 qa-agent references + per-module `conventions.md`/`memory/`. Catalogue + triggers:
 **`.claude/skills/README.md`**. By stage: onboard (`setup` · `mcp-setup` · `ci-setup` ·
@@ -34,8 +34,9 @@ qa-agent references + per-module `conventions.md`/`memory/`. Catalogue + trigger
 `coverage-gap` · `data-factory`), automate (`automation-generate` · `scaffold-screen` ·
 `visual-regression`), run/report (`run-tests` · `read-report` · `qa-status`), triage
 (`review-code` · `fix-test` · `flaky-triage` · `create-bug`), maintain (`publish-testcases` ·
-`update-conventions`), engine (`qa-agent`). When editing any skill or reference, mirror the
-change to BOTH `.claude` and `.agents` (the `update-conventions` skill checks parity).
+`update-conventions`), engine (`qa-agent` · `gen-auto-test` — manual cases → automation, no
+Jira story needed). When editing any skill or reference, mirror the change to BOTH `.claude`
+and `.agents` (the `update-conventions` skill checks parity).
 
 ## MCP servers — prefer these over Bash (they save tokens)
 Registered in **`.mcp.json`** (Claude Code loads per-project; approve once via `/mcp`).

@@ -8,6 +8,8 @@
 //
 // --results (optional, post-execution) fills Test Result / Bug ID per tcId:
 //   { "TC-001": { "result": "Passed", "bugId": "" }, ... }
+//   (`testResult` is accepted as an alias of `result` — the canonical
+//   test-case JSON uses that field name, so both spellings must work.)
 //
 // Requires `exceljs` (devDependency). JSON is the source of truth — never
 // hand-edit the xlsx; re-export from JSON.
@@ -71,7 +73,7 @@ for (const tc of cases) {
         stepDetails: renderSteps(tc.stepDetails),
         element: (tc.stepDetails || []).map((s) => s.element).filter(Boolean).join("\n"),
         priority: tc.priority ?? "",
-        testResult: res.result ?? tc.testResult ?? "",
+        testResult: res.result ?? res.testResult ?? tc.testResult ?? "",
         bugId: res.bugId ?? tc.bugId ?? "",
         notes: tc.notes ?? "",
     }).alignment = { vertical: "top", wrapText: true };

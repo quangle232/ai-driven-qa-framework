@@ -17,7 +17,10 @@ import path from "node:path";
 import { REPO_ROOT } from "../utils/paths";
 import type { FilePatch } from "../agents/automation-builder-agent";
 
-const ALLOWED_ROOTS = ["tests/", "page-objects/", "test-data/"];
+// core/test-tags.ts is the ONE core file patches may touch (additive tag
+// entries per the tag == Jira label convention); everything else in core/
+// stays off-limits via patch-guard.
+const ALLOWED_ROOTS = ["tests/", "page-objects/", "test-data/", "core/test-tags.ts"];
 
 export interface ApplyAction {
     path: string;

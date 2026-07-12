@@ -30,7 +30,7 @@ Never treat the table as the source; every edit updates the JSON first.
 - `priority` (P0/P1/P2) · `priorityReason`
 - `duplicateStatus` (none | duplicate | possible-overlap) · `duplicateOf` · `duplicateReason`
 - `acIds`: `["AC1"]`
-- **`automatable`** (Y/N) · **`surface`** (ui | api | grpc | mobile)
+- **`automatable`** (Y/N) · **`coverageType`** (happy | negative | edge — drives the Phase 2 coverage matrix) · **`surface`** (ui | api | grpc | mobile)
 - `tags`: feature tag(s) == Jira label(s) (drives `--grep`/CI)
 - `testResult` (empty until executed) · `bugId` · `notes`
 - `specFile`: filled once the case is automated (Phase 6) — used for anti-duplication

@@ -7,14 +7,14 @@ entry point that delegates to the **qa-agent** engine + references + the per-mod
 `conventions.md`/`memory/`, so behaviour stays consistent.
 
 - **Where they live:** `.agents/skills/<name>/SKILL.md` (this dir). Claude uses the identical
-  mirror at [`.claude/skills/`](../../.claude/skills/README.md) — same 22 skills, `.claude/` paths.
+  mirror at [`.claude/skills/`](../../.claude/skills/README.md) — same 23 skills, `.claude/` paths.
 - **What they operate on:** the modules (`ui/ api/ mobile/ performance/`), the `aiqa:*` CLI,
   the 4 `aiqa-*` MCP servers, and Jira/Figma/Playwright/test-management MCPs.
 - **Guardrails they respect:** single ActionKeyword/client layer, `tag == Jira label`,
   patch-guarded paths, human-approval loop, "leave the SUT clean". See
   [qa-agent/references/framework-conventions.md](qa-agent/references/framework-conventions.md).
 
-## Catalogue (22 skills, by QA lifecycle)
+## Catalogue (23 skills, by QA lifecycle)
 
 ### Onboard & connect
 | Skill | What it does | Say / type |
@@ -64,4 +64,5 @@ entry point that delegates to the **qa-agent** engine + references + the per-mod
 ### Engine
 | Skill | What it does |
 |---|---|
-| **qa-agent** | The underlying AI-QA engine (parse AC → design → enrich → approve → publish → generate → run → report). The skills above are focused entry points into it; use directly for the full workflow. |
+| **qa-agent** | The underlying AI-QA engine (parse AC → design → enrich → approve → publish → generate → headless run + 5/5 stress → review → auto branch+MR → report). The skills above are focused entry points into it; use directly for the full workflow. |
+| **gen-auto-test** | Manual test cases → automation, no Jira story: paste steps or point at a .xlsx/.md/.json; missing steps discovered on the live app (Playwright MCP); shares the qa-agent code-gen engine, stress gate and ship gate. Say "/gen-auto-test" or "generate automation from these test cases". |

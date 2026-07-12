@@ -135,7 +135,7 @@ Full migration / setup guide: **[INSTALL.md](INSTALL.md)**.
 
 ## Skills — drive the framework in plain language
 
-22 auto-invocable skills ship for **both Claude Code** (`.claude/skills/`) and **Codex**
+23 auto-invocable skills ship for **both Claude Code** (`.claude/skills/`) and **Codex**
 (`.agents/skills/`) — identical, mirror-verified. You don't run them by hand: describe what
 you want and the tool picks the matching skill by its trigger phrases (or type `/<name>`).
 Each is a focused entry point into the **qa-agent** engine + per-module conventions.
@@ -164,7 +164,8 @@ Full catalogue: **[.claude/skills/README.md](.claude/skills/README.md)**.
 | `create-bug` | All | Triage | File a Jira bug | Confirmed defect only — deduped, evidence-backed, linked to the story |
 | `publish-testcases` | All | Publish | Publish approved cases | Export to Excel · Xray · TestRail; attach to Jira; sync statuses after runs |
 | `update-conventions` | Framework | Maintain | Audit docs ↔ code | Drift check + `.claude`/`.agents` mirror parity; fixes the docs |
-| `qa-agent` | All | Engine | The AI-QA engine | parse AC → design → enrich → approve → publish → generate → run → report |
+| `qa-agent` | All | Engine | The AI-QA engine | parse AC → design → enrich → approve → publish → generate → headless run + 5/5 stress → review → auto branch+MR → report |
+| `gen-auto-test` | UI · API | Engine | Manual cases → automation | Pasted steps / .xlsx / .md / .json → normalized cases; missing steps discovered on the live app; shared code-gen engine, stress + ship gates — no Jira story required |
 
 *Module / scope:* **All** = works across `ui/ api/ mobile/ performance/`; **Framework** = maintainer/scaffolding; **CI**/**MCP** = infra. Everything runs on the `yarn aiqa:*` CLI + the `aiqa-*` MCP servers, respecting the single-keyword-layer rule, `tag == Jira label`, patch-guarded paths, the human-approval loop, and "leave the SUT clean".
 

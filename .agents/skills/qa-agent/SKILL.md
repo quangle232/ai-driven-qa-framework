@@ -79,6 +79,19 @@ status gate and start at Phase 2. **Never skip the human approval loop.**
   source of truth. One case per intent, auto-friendly steps (one action + the element per step).
 - Cross-check `docs/ai/test-case.md`: reuse equivalent existing cases; mark each new vs existing.
 
+**Coverage matrix is mandatory** for the generated set: `{happy, negative,
+edge}` × the story's surfaces (`ui`, `api`, …, optional `performance` /
+`security`). Every cell is covered by a case, turned into a new case, or an
+explicit N/A with an honest reason — the matrix is shown in the Phase 4
+review. Set `coverageType` on each case (json-contract.md).
+
+**Impacted-flow analysis** — the second context: from the story, name the
+surfaces the change touches (endpoints/response shapes, pages/components,
+shared bundles); map them to existing flows via the tracking files and the
+existing-code index. Covered impacted flows JOIN the Phase 7 execution;
+uncovered ones become new cases. The list (flow, spec or NEW, reason, risk)
+is part of the Phase 4 review.
+
 ### Phase 3 — Enrich the JSON
 Before showing anything, enrich the JSON (keep it the source of truth):
 - **Testing strategy** coverage (`testing-strategy.md`): happy/negative/edge/boundary/security/
@@ -99,13 +112,20 @@ Before showing anything, enrich the JSON (keep it the source of truth):
 
 ### Phase 5 — Export to the chosen test-management tool  *(after approval)*
 Per `test-management.md`, the target is **pluggable** via `TEST_MGMT` (default `excel`):
-- **excel** — `node .agents/skills/qa-agent/scripts/export-testcases-excel.mjs` → xlsx; attach to the
-  parent Jira story; save the artifact under `docs/ai/`.
+- **excel** — `node .agents/skills/qa-agent/scripts/export-testcases-excel.mjs` → xlsx; save the
+  artifact under `docs/ai/`. **This export is a LOCAL review copy — do NOT
+  attach it to Jira yet.** Jira gets exactly ONE Excel upload (Phase 7
+  FINALIZE): the post-execution re-export with `--results`, so the attached
+  sheet always carries pass/fail per case — never a resultless duplicate.
+  (Flows that end without execution attach this approval-time file instead.)
 - **xray** — create Xray Test issues in Jira from the JSON (Jira/Xray MCP), linked to the story.
 - **testrail** — needs TestRail config + the TestRail MCP; create section/cases + a test run.
 Persist the frozen JSON artifact under `docs/ai/` regardless of target.
 
 ### Phase 6 — Generate automation code  *(full mode, anti-duplication)*
+Code generation is shared with the **`gen-auto-test`** skill
+(`../gen-auto-test/SKILL.md`) — the manual-cases entry point delegates HERE
+being already normalized, and this phase follows the same engine rules.
 For each **automatable, approved** case NOT already covered:
 - Discover real selectors with the Playwright MCP (`data-zcqa → data-test-id → data-id → data-title`;
   never invent). Generate per `framework-conventions.md`, by surface (UI POM / API service /
@@ -123,6 +143,54 @@ For each **automatable, approved** case NOT already covered:
   back per case — Xray Test Execution / TestRail run results / Excel result column.
 - **HTML execution report for the user:** `yarn report:bugs` (→ `test-output/ai/test-report.html`) /
   `yarn report:all`. Surface the path.
+
+- **STRESS gate — mandatory for every NEW auto case:** re-run it HEADLESS
+  (`CI=true` — the headless switch, `config/playwright.base.ts` sets
+  `headless: isCI`) with `--repeat-each=5`. **All 5 repeats must pass**
+  before the test counts as done; any failed repeat = flakiness — fix the
+  test-side cause and re-stress. Workers: `--workers=1` on a shared SUT
+  (the default discipline); raise to `--workers=3` max only when the target
+  environment tolerates parallel runs. Entity-creating specs: teardown runs
+  per repeat — verify no leftovers accumulate on a shared SUT. **Stress
+  produces NO Allure artifact** — run it AFTER the Allure report is frozen
+  (see FINALIZE) and report it as a markdown summary table (case | repeats |
+  result | duration) in the review, the MR description, and a Jira comment
+  on the parent story.
+- **FINALIZE — links in every summary:** single-file Allure ALWAYS, and
+  **execution run ONLY** — order matters: clear allure-results → run the new
+  cases once → `yarn allure:single` → copy to
+  `AllureReport_<feature>_<date>.html` → only then stress (never regenerate
+  after stress; repeats must not inflate the attached report). Also: the
+  AI-QA stakeholder HTML (`yarn report:all`), the bug-drafts index (`npx tsx
+  core/jira/ensure-bug-drafts-index.ts` — exists even when green), and the
+  results-Excel (verify the Test Result column is actually filled — a
+  resultless sheet is a duplicate, not an artifact). Attach the results-Excel
+  AND the renamed Allure file to the parent story — ONE upload each — via
+  `node .agents/skills/qa-agent/scripts/attach-file-to-jira.js`
+  (the official Atlassian remote MCP has NO attachment-upload tool).
+- **Bug policy:** failures write approval-gated DRAFTS
+  (`test-output/ai/bug-drafts/` — JSON + self-contained HTML with repro
+  command and embedded screenshots; core/test.ts gate). File a bug via the
+  Jira MCP ONLY for drafts the user explicitly approves. `JIRA_AUTO_BUG=yes`
+  is the explicit opt-in for direct auto-filing.
+
+### Phase 7.5 — ⏸ Review scripts + results → branch is AUTOMATIC on approval
+Present for human review with clickable file links: every generated file
+(one-line plain-English summary + `git diff --stat`), the run AND stress
+results (the 5/5 table), the finalize artifact links. **That approval IS
+the authorization to ship**: create the branch, commit ONLY the generated
+files, push, and open the MR automatically — no second confirmation.
+- **MR description — write it as review best-practice**, 5 fixed sections:
+  (1) What changed — every file Added/Changed with a one-line purpose;
+  (2) new-case execution summary table; (3) stress summary table (5/5);
+  (4) artifacts & Jira links; (5) reviewer notes (guard exceptions,
+  deviations, known defects).
+- Branch naming (team rule): **`test/<STORY-KEY>-<feature-slug>`**; runs
+  without a story (gen-auto-test standalone): `test/manual-<slug>-<YYYYMMDD>`.
+- MR via `scripts/create-gitlab-mr.js` (GitLab adapter — config from
+  `GITLAB_URL`/`GITLAB_TOKEN`/`GITLAB_PROJECT_ID` or `environments/.env.gitlab`;
+  other providers can follow the same contract). If the repo has no remote,
+  report "branch+MR skipped — repo not bootstrapped" and continue.
 
 ### Phase 8 — Tracking + Jira sub-tasks
 - Update `docs/ai/` (memory / test-case / navigation) first.
@@ -145,6 +213,19 @@ For each **automatable, approved** case NOT already covered:
 - **Generated code follows `framework-conventions.md` exactly**; comments in English; data in `ui/test-data/`.
 - **Never hard-fail mid-flow** — every MCP / Jira / export step has a `docs/ai/` fallback.
 - Update the `docs/ai/` tracking files after every generation and run.
+- **New tests must be 5/5 stress-green** (`--repeat-each=5`, headless,
+  workers per the shared-SUT discipline) before they are presented as done.
+- **STRICT HEADLESS for generated cases** (`CI=true` — the exact mode CI
+  uses). Never `--headed` in the generation pipeline; a test that only
+  passes headed is not done.
+- **Bugs are never auto-filed** — drafts wait for human approval
+  (`JIRA_AUTO_BUG=yes` is the explicit opt-in).
+- **Generated code ships via branch + MR only** (`test/<STORY-KEY>-<slug>`),
+  auto-created by the Phase 7.5 approval — never straight to the default branch.
+- **Presentation rules:** every approval gate and every results summary lists
+  the related files as clickable links with one-line plain-English
+  descriptions; code-gen results show branch + MR + diff summary — never dump
+  raw code walls at a manual QA.
 
 ## Conflict order
 1. explicit user instruction

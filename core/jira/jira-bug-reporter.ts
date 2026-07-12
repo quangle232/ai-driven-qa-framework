@@ -3,6 +3,11 @@ import { existsSync, readFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
+// Every Jira call is bounded: axios defaults to NO timeout, and this reporter
+// runs inside fixture teardown — an unresponsive Jira must degrade to the
+// catch/warn/return-null path, never hang the run.
+const jira = axios.create({ timeout: 30_000 });
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export interface ReportBugInput {
@@ -90,7 +95,7 @@ export async function reportBugToJira(input: ReportBugInput): Promise<ReportBugR
     // 2) Create a fresh bug.
     let bugKey: string;
     try {
-        const create = await axios.post(
+        const create = await jira.post(
             `${base}/rest/api/3/issue`,
             {
                 fields: {
@@ -114,7 +119,7 @@ export async function reportBugToJira(input: ReportBugInput): Promise<ReportBugR
 
     // 3) Link the new bug to the user story ("Relates" is universally available).
     try {
-        await axios.post(
+        await jira.post(
             `${base}/rest/api/3/issueLink`,
             {
                 type: { name: 'Relates' },
@@ -169,7 +174,7 @@ async function findOpenBugBySummary(
         + `ORDER BY created DESC`;
 
     // NEW endpoint: POST /rest/api/3/search/jql with JSON body.
-    const res = await axios.post(
+    const res = await jira.post(
         `${base}/rest/api/3/search/jql`,
         { jql, fields: ['summary', 'status'], maxResults: 20 },
         { headers }

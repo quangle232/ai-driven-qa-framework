@@ -31,7 +31,11 @@ node .agents/skills/qa-agent/scripts/export-testcases-excel.mjs \
   --out  test-output/ai/TestCases_<feature>.xlsx
 ```
 - Attach the xlsx to the **parent Jira user story only** (never to a sub-task).
-- After execution, re-run with `--results` (or update the `Test Result` column) and re-attach.
+- **Attach timing: exactly ONE upload, post-execution.** The approval-time
+  export is a local review copy only. After execution re-run with
+  `--results`, VERIFY the `Test Result` column is filled (a resultless sheet
+  is a duplicate, not an artifact), and attach that file. Flows that end
+  without execution attach the approval-time export instead.
 
 ## xray  (Jira-native)
 - Xray tests ARE Jira issues (issue type **Test**). Use the Atlassian/Jira MCP

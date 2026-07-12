@@ -10,6 +10,27 @@ This framework versions independently of any consuming product repo.
 ## [Unreleased]
 
 ### Added
+- **`gen-auto-test` skill — manual test cases → automation, no Jira story.** Paste steps,
+  or point at an Excel (.xlsx) / Markdown table / canonical JSON; cases are normalized to the
+  canonical contract (`scripts/import-testcases-excel.js` for Excel), vague/missing steps are
+  DISCOVERED on the live app via the Playwright MCP, then the shared qa-agent code-gen engine
+  takes over. Human gates on the case table and on scripts+results; approval auto-creates the
+  branch (`test/manual-<slug>-<date>` / `test/<KEY>-<slug>`) + GitLab MR
+  (`scripts/create-gitlab-mr.js`). Jira wrap-up only when a story key rides along.
+- **Bug DRAFTS behind a human approval gate (default) instead of auto-filed Jira bugs.**
+  A final-attempt failure now writes `test-output/ai/bug-drafts/<slug>.json` + a
+  self-contained `.html` (repro command, error, embedded screenshots) via
+  `core/jira/bug-draft-writer.ts`; `core/jira/ensure-bug-drafts-index.ts` guarantees the
+  index exists even on green runs. `JIRA_AUTO_BUG=yes` is the explicit opt-in for the old
+  direct auto-filing. Jira HTTP calls now carry a 30s timeout so an unresponsive Jira can
+  never hang teardown.
+- **qa-agent hardening: stress + ship gates.** Every NEW generated case must pass
+  `--repeat-each=5` HEADLESS (5/5 green) before it counts as done; Allure is frozen BEFORE
+  stress so repeats never inflate the report; generated code ships via branch + MR only
+  (Phase 7.5 review approval auto-creates both). Coverage matrix ({happy,negative,edge} ×
+  surfaces) + impacted-flow analysis are now mandatory in design; Excel attaches to Jira
+  exactly once (post-execution, results filled) via `scripts/attach-file-to-jira.js` (the
+  Atlassian MCP has no upload tool).
 - **Skills library — 22 auto-invocable skills for Claude Code + Codex.** Focused,
   plain-language entry points in `.claude/skills/` (mirror `.agents/skills/`, identical),
   each delegating to the qa-agent engine + per-module conventions/memory. Covers the QA
@@ -47,6 +68,19 @@ This framework versions independently of any consuming product repo.
   `grpc/README.md`, `mobile/README.md`.
 
 ### Changed
+- **Engine fixes (src/ai-qa-agent).** `core/test-tags.ts` is now the ONE core file
+  generated patches may touch (patch-guard + apply-patches — the tag == Jira label rule
+  requires adding TAGS entries); the `TAGS.REGRESSION` guard applies to CREATE patches only
+  (repo-wide sweeps of legacy specs no longer turn red); `aiqa:mcp:start` stays alive until
+  the MCP client disconnects (was: exited immediately); the existing-code-index cache key
+  now covers every indexed file (nested edits invalidate it) and `specFeature()` supports
+  both modular and flat `tests/<feature>/` layouts; `run-regression` gains `--grep-invert`
+  pass-through; `AI_PROVIDER=openai` warns loudly before falling back to noop; the builder
+  prompt asks for FULL file content in `patches[]` (never a diff). `core/test.ts` only
+  drafts/files bugs for real `failed`/`timedOut` outcomes (Ctrl+C 'interrupted' no longer
+  creates artifacts) and uses the public retries API. Excel export accepts `testResult` as
+  an alias of `result` in `--results`. `run-tests` skill documents `CI=true` as THE
+  headless switch. `yarn.lock` refreshed to match package.json.
 - **Moved `jenkins/` → `ci/jenkins/`** to consolidate all CI samples under
   `ci/`. Updated every reference (docs, qa-agent skill, patch-guard, MCP guard)
   and the pipeline's internal `collect-playwright-stats.js` path; the

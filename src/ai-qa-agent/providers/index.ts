@@ -22,7 +22,15 @@ export function makeProvider(env: NodeJS.ProcessEnv = process.env): Provider {
             fastModel: env.AIQA_CLAUDE_FAST_MODEL?.trim() || FAST_MODEL_DEFAULT,
         });
     }
-    // OpenAI tier deferred to a later phase; noop covers it for now.
+    // OpenAI tier deferred to a later phase; noop covers it for now. Warn
+    // loudly so `AI_PROVIDER=openai` users aren't misled by doctor/runtime
+    // reporting a healthy provider while every agent silently runs noop.
+    if (cfg.name === "openai") {
+        console.warn(
+            "[aiqa] AI_PROVIDER=openai is not implemented — falling back to the noop provider "
+            + "(deterministic-only). Use AI_PROVIDER=claude with ANTHROPIC_API_KEY for LLM features.",
+        );
+    }
     return new NoopProvider();
 }
 

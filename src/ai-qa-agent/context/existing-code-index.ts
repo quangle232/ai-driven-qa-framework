@@ -90,11 +90,18 @@ function featureFromPath(file: string, root: string): string {
     return first || "unknown";
 }
 
-/** Feature for a spec = the surface/module (segment before its `tests/` dir). */
+/**
+ * Feature for a spec. Works for both supported layouts:
+ *   - modular (this starter): ui/tests/x.spec.ts  -> "ui" (segment BEFORE tests)
+ *   - flat project repos:     tests/b2b/x.spec.ts -> "b2b" (segment AFTER tests)
+ *   - root utility specs:     tests/x.spec.ts     -> "root"
+ */
 function specFeature(file: string): string {
     const parts = file.split(/[/\\]/);
     const ti = parts.indexOf("tests");
-    if (ti > 0) return parts[ti - 1]; // ui | rest | grpc | graphql | mobile
+    if (ti >= 0 && ti < parts.length - 2) return parts[ti + 1]; // dir inside tests/
+    if (ti > 0) return parts[ti - 1]; // module owning the tests/ dir
+    if (ti === 0) return "root";
     return parts[0] || "unknown";
 }
 
@@ -178,7 +185,17 @@ const SOURCE_MTIME_PATHS = [
 ];
 
 export function loadExistingCodeIndex(): ExistingCodeIndex {
-    const stamps = SOURCE_MTIME_PATHS.map(p => path.resolve(REPO_ROOT, p));
+    // Cache key covers EVERY indexed file, not just the top-level dirs: a
+    // directory's mtime only changes when a direct child is added/removed,
+    // so nested edits (ui/page-objects/feature/x-page.ts) would never
+    // invalidate a dir-level key and the index would go permanently stale.
+    const indexedFiles = [
+        ...SOURCE_MTIME_PATHS.filter(p => p.endsWith(".ts")),
+        ...listFiles("ui/page-objects", /-page\.ts$/i),
+        ...["ui/tests", "api", "mobile/tests"].flatMap(root => listFiles(root, /\.spec\.ts$/i)),
+        ...listFiles("ui/test-data", /-data\.ts$/i),
+    ];
+    const stamps = indexedFiles.map(p => path.resolve(REPO_ROOT, p));
     const key = cacheKey(SCHEMA, stamps);
     const cached = getCachedContext(key);
     if (cached) {

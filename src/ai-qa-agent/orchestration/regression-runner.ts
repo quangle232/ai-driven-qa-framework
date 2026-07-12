@@ -36,6 +36,8 @@ export interface RegressionRunOptions {
     env?: string;
     /** Override grep pattern (default "@regression"). */
     grep?: string;
+    /** Optional --grep-invert pattern (e.g. "@bugs"); omitted when unset. */
+    grepInvert?: string;
     /** Pass-through to playwright `--workers`. */
     workers?: number;
     /** Pass-through to playwright `--retries`. */
@@ -73,6 +75,7 @@ export async function runRegression(opts: RegressionRunOptions = {}): Promise<Re
         opts.refreshStorage ? "refresh=yes" : "refresh=no",
         "playwright", "test",
         "--grep", grep,
+        ...(opts.grepInvert ? ["--grep-invert", opts.grepInvert] : []),
         "-c", "config/playwright.config.ts",
     ];
     if (opts.workers) args.push(`--workers=${opts.workers}`);

@@ -67,14 +67,20 @@ export function guardPatches(patches: FilePatch[]): { accepted: FilePatch[]; rej
     return { accepted, rejected };
 }
 
+// The ONE core file patches may touch: the tag == Jira label convention
+// requires adding a TAGS entry per new feature, and the builder prompt
+// instructs exactly that. Additive and low-risk; the rest of core/ stays
+// blocked below.
+const TAG_CATALOGUE = "core/test-tags.ts";
+
 function inspect(p: FilePatch): string | null {
     const norm = p.path.replace(/^[./\\]+/, "");
 
-    if (BLOCKED_PREFIXES.some(b => norm.startsWith(b))) {
+    if (norm !== TAG_CATALOGUE && BLOCKED_PREFIXES.some(b => norm.startsWith(b))) {
         return `path is in the blocked list: ${norm}`;
     }
-    if (!ALLOWED_PREFIXES.some(a => norm.startsWith(a))) {
-        return `path is outside the allowed roots (tests/, page-objects/, test-data/): ${norm}`;
+    if (norm !== TAG_CATALOGUE && !ALLOWED_PREFIXES.some(a => norm.startsWith(a))) {
+        return `path is outside the allowed roots (tests/, page-objects/, test-data/, core/test-tags.ts): ${norm}`;
     }
 
     // Spec-level checks
@@ -88,10 +94,12 @@ function inspect(p: FilePatch): string | null {
         if (TEST_SKIP.test(p.content)) {
             return "spec uses test.skip — forbidden by policy";
         }
-        // Every new spec MUST opt into the regression suite. Without this the
+        // Every NEW spec MUST opt into the regression suite. Without this the
         // `aiqa:run-regression` / `--grep @regression` selection would silently
-        // skip the new test.
-        if (!/TAGS\.REGRESSION\b/.test(p.content)) {
+        // skip the new test. Scoped to CREATE patches: the repo-wide guard
+        // sweep wraps existing files as kind "update", and legacy/utility
+        // specs deliberately outside the regression grep must not turn it red.
+        if (p.kind === "create" && !/TAGS\.REGRESSION\b/.test(p.content)) {
             return "spec missing TAGS.REGRESSION — regression suite would skip this test";
         }
     }

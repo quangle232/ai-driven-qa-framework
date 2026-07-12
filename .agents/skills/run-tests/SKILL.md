@@ -11,6 +11,11 @@ description: Run a test slice smartly then report. Use for "run the tests", "run
   Full run: `yarn test:test` (root config, all modules).
 - **Tags** → `--grep "@regression"` · green slice `--grep-invert "@bugs"` · `--grep "@<feature>"`.
 - **Env** → `test_env=dev|test|prod` (default test).
+- **Headless by default (CI parity)** → prefix `CI=true`
+  (`config/playwright.base.ts` sets `headless: isCI` — that env var IS the
+  headless switch; there is no HEADLESS flag). Run headed ONLY when the user
+  explicitly passes `HEADED` — then drop the `CI=true` prefix (do not add
+  `--headed` on top).
 
 ## Operating discipline (shared/demo SUT — see docs/ai/LESSONS-LEARNED.md)
 - Run **serial** (`--workers=1`) on a shared server; add `--retries=2` so count/reconciliation
