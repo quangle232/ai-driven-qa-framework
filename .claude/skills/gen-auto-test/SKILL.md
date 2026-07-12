@@ -25,7 +25,7 @@ Scripts:
 - `./scripts/import-testcases-excel.js` — Excel (.xlsx, the 11 review columns) → canonical JSON
 - `../qa-agent/scripts/export-testcases-excel.mjs` — canonical JSON → Excel (results re-export)
 - `../qa-agent/scripts/attach-file-to-jira.js` — attach xlsx/HTML to a story (the Atlassian MCP has no upload tool)
-- `../qa-agent/scripts/create-gitlab-mr.js` — open the MR for a pushed branch (GitLab adapter)
+- `../qa-agent/scripts/create-mr.js` — open the MR/PR for a pushed branch (GitLab · GitHub · Bitbucket · Azure DevOps · Gitea; auto-detects from `origin`)
 
 ## Invocation contract
 Any of these starts the flow:
@@ -145,7 +145,9 @@ the branch, commit ONLY the generated files, push and open the MR
 automatically — no second confirmation.
 - Branch naming (team rule): **`test/manual-<feature-slug>-<YYYYMMDD>`**;
   when the cases carry a story key use **`test/<STORY-KEY>-<feature-slug>`**.
-- MR via `../qa-agent/scripts/create-gitlab-mr.js` — title
+- MR/PR via `../qa-agent/scripts/create-mr.js` (multi-provider: GitLab ·
+  GitHub · Bitbucket · Azure DevOps · Gitea; auto-detects from the `origin`
+  remote, config in `environments/.env.git`) — title
   `<feature>: qa-agent generated tests (manual cases)`, description = the
   review summary + artifact links. Show branch + MR link in the summary.
 - Skippable on request; report "branch+MR skipped — repo not bootstrapped"

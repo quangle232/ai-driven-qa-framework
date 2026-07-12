@@ -15,8 +15,13 @@ This framework versions independently of any consuming product repo.
   canonical contract (`scripts/import-testcases-excel.js` for Excel), vague/missing steps are
   DISCOVERED on the live app via the Playwright MCP, then the shared qa-agent code-gen engine
   takes over. Human gates on the case table and on scripts+results; approval auto-creates the
-  branch (`test/manual-<slug>-<date>` / `test/<KEY>-<slug>`) + GitLab MR
-  (`scripts/create-gitlab-mr.js`). Jira wrap-up only when a story key rides along.
+  branch (`test/manual-<slug>-<date>` / `test/<KEY>-<slug>`) + MR/PR. Jira wrap-up
+  only when a story key rides along.
+- **Multi-provider MR/PR script (`scripts/create-mr.js`).** The ship step works on
+  **GitLab · GitHub (incl. Enterprise) · Bitbucket Cloud · Azure DevOps · Gitea/Forgejo** —
+  provider auto-detected from the `origin` remote (override `GIT_PROVIDER`/`--provider`),
+  per-provider config in `environments/.env.git` (template `.env.git.example`; legacy
+  `.env.gitlab` still read). Idempotent: an already-open MR/PR for the branch is reused.
 - **Bug DRAFTS behind a human approval gate (default) instead of auto-filed Jira bugs.**
   A final-attempt failure now writes `test-output/ai/bug-drafts/<slug>.json` + a
   self-contained `.html` (repro command, error, embedded screenshots) via

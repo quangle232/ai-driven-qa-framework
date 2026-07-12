@@ -187,10 +187,13 @@ files, push, and open the MR automatically — no second confirmation.
   deviations, known defects).
 - Branch naming (team rule): **`test/<STORY-KEY>-<feature-slug>`**; runs
   without a story (gen-auto-test standalone): `test/manual-<slug>-<YYYYMMDD>`.
-- MR via `scripts/create-gitlab-mr.js` (GitLab adapter — config from
-  `GITLAB_URL`/`GITLAB_TOKEN`/`GITLAB_PROJECT_ID` or `environments/.env.gitlab`;
-  other providers can follow the same contract). If the repo has no remote,
-  report "branch+MR skipped — repo not bootstrapped" and continue.
+- MR/PR via `scripts/create-mr.js` — MULTI-PROVIDER: GitLab · GitHub ·
+  Bitbucket · Azure DevOps · Gitea/Forgejo. The provider is auto-detected
+  from the `origin` remote (override `--provider` / `GIT_PROVIDER`); config
+  per provider in `environments/.env.git` (template `.env.git.example`; env
+  vars win). Re-runs are idempotent — an already-open MR/PR is reused and its
+  URL printed. If the repo has no remote, report "branch+MR skipped — repo
+  not bootstrapped" and continue.
 
 ### Phase 8 — Tracking + Jira sub-tasks
 - Update `docs/ai/` (memory / test-case / navigation) first.
