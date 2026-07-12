@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * create-gitlab-mr.js — open a GitLab merge request for a pushed branch
- * (qa-agent Phase 6.5: generated code reaches the team via branch + MR).
+ * (qa-agent Phase 7.5 / gen-auto-test Phase 6: generated code reaches the
+ * team via branch + MR).
  *
  * Usage:
  *   node .claude/skills/qa-agent/scripts/create-gitlab-mr.js \
@@ -14,8 +15,8 @@
  * story-driven runs; test/manual-<feature-slug>-<YYYYMMDD> for
  * gen-auto-test runs without a story.
  *
- * Config (same contract as trigger-gitlab.js): GITLAB_URL, GITLAB_TOKEN,
- * GITLAB_PROJECT_ID env vars, falling back to environments/.env.gitlab.
+ * Config: GITLAB_URL, GITLAB_TOKEN, GITLAB_PROJECT_ID env vars, falling back
+ * to environments/.env.gitlab (template: environments/.env.gitlab.example).
  *
  * Exit codes: 0 = MR created (URL printed), 1 = config missing,
  * 2 = usage error, 3 = GitLab API error.
