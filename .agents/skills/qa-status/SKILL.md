@@ -13,12 +13,13 @@ don't recompute from scratch.
   `get_critical_events`) or `test-output/ai/`. (Run **read-report** first if stale.)
 - **Flaky** — `aiqa-memory` flaky-history (see **flaky-triage**).
 - **Coverage** — top gaps (see **coverage-gap**), esp. P0 areas + surfaces with no tests.
-- **Open defects** — auto-filed / on-demand Jira bugs linked to current stories.
+- **Open defects** — Jira bugs linked to current stories + PENDING bug drafts awaiting
+  approval (`test-output/ai/bug-drafts/index.html`; stale drafts = triage debt).
 
 ## Output (one page)
 - ✅/❌ headline: passed / failed / flaky counts + pass-rate, per surface.
 - 🚨 Critical events (smoke/login/5xx/payment / ≥30% same-reason).
-- 🔁 Flaky watch-list. 🕳️ Coverage gaps (top 3). 🐞 Open bugs.
+- 🔁 Flaky watch-list. 🕳️ Coverage gaps (top 3). 🐞 Open bugs + pending drafts.
 - 👉 **The one thing to fix first** (highest business-impact deterministic failure).
 
 ## Rules

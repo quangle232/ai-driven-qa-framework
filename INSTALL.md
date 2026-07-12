@@ -3,8 +3,8 @@
 This is a starter test framework. You take the whole repo (or copy the
 listed dirs into an existing one) and fill in 4 product-specific stubs.
 The framework itself stays untouched — your customisations live in
-`helper/authenticate-set-up.ts`, `environments/`, `tests/`,
-`page-objects/`, `test-data/`, and `.aiqa-memory/`.
+`ui/helpers/authenticate-set-up.ts`, `environments/`, `ui/tests/`,
+`ui/page-objects/`, `ui/test-data/`, and `.aiqa-memory/`.
 
 Two scenarios:
 
@@ -55,7 +55,7 @@ JIRA_TOKEN=<your-atlassian-api-token>
 
 ### 3. Fill in the login flow
 
-`helper/authenticate-set-up.ts` ships with a stub. Open it, find the
+`ui/helpers/authenticate-set-up.ts` ships with a stub. Open it, find the
 `// TODO` block, replace with your product's actual sign-in flow.
 
 The framework runs this **once** at the start of every test session and
@@ -64,7 +64,7 @@ per-test login.
 
 ### 4. Add feature tags
 
-Open `helper/test-tags.ts`. Add one entry per feature your product has —
+Open `core/test-tags.ts`. Add one entry per feature your product has —
 the tag value must equal the Jira label you use for that feature:
 
 ```ts
@@ -130,12 +130,13 @@ import, hard waits, missing `TAGS.REGRESSION`, etc.).
 
 ### 7. Delete the sample (when ready)
 
-The starter ships `tests/sample/`, `page-objects/sample/`, and
-`test-data/sample-data.ts` as a working example. Once you have your own
+The starter ships `ui/tests/`, `ui/page-objects/sample/`, and
+`ui/test-data/sample-data.ts` as a working example. Once you have your own
 specs, you can remove them:
 
 ```bash
-rm -rf tests/sample page-objects/sample test-data/sample-data.ts
+rm -rf ui/tests/sample.spec.ts ui/tests/sample-crud.spec.ts ui/page-objects/sample \
+       ui/test-data/sample-data.ts ui/helpers/sample-user-api.ts
 ```
 
 ### 8. Run + report
@@ -171,10 +172,10 @@ tsconfig.aiqa.json    ← separate typecheck scope
 ### Copy these helper files (rename / merge as needed)
 
 ```
-helper/test.ts                 ← framework-wide failure → Jira-bug auto-fixture
-helper/jira-bug-reporter.ts
-helper/jira-story.ts
-helper/test-tags.ts            ← tag catalogue; merge with yours
+core/test.ts                 ← framework-wide failure → Jira-bug auto-fixture
+core/jira/jira-bug-reporter.ts
+core/jira/jira-story.ts
+core/test-tags.ts            ← tag catalogue; merge with yours
 ```
 
 ### Merge package.json
@@ -215,8 +216,8 @@ yarn aiqa:mcp:list    # should show 4 servers / 25 tools
 
 ### Update your existing specs
 
-Every spec needs to import `{ test, expect }` from `helper/test` (not
-`@playwright/test`) for the failure → Jira-bug auto-fixture to apply.
+Every spec needs to import `{ test, expect }` from `@core/test` (not
+`@playwright/test`) for the failure → bug-draft auto-fixture to apply.
 The patch-guard catches missing imports — run `yarn aiqa:guard` to
 inventory which specs need to be migrated.
 
@@ -301,10 +302,11 @@ see `ci/README.md` for the cross-provider contract.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `yarn aiqa:doctor` says `auth-setup ⚠` | `helper/authenticate-set-up.ts` still has the example URLs | Replace the TODO block with your sign-in flow |
+| `yarn aiqa:doctor` says `auth-setup ⚠` | `ui/helpers/authenticate-set-up.ts` still has the example URLs | Replace the TODO block with your sign-in flow |
 | `yarn aiqa:doctor` says `env-file ✗` | `environments/.env.test` missing | `yarn aiqa:init-project --env=test --app-url=...` |
 | `yarn aiqa:generate-automation` says `provider=noop` | `ANTHROPIC_API_KEY` not set | Either set the key, or use Claude Code interactively (Mode A) |
-| Spec runs but no Jira bug created on failure | `environments/.env.jira` missing or wrong creds | Re-init with `--jira-url=... --jira-project=...` + fill in `JIRA_EMAIL` + `JIRA_TOKEN` |
+| Spec fails but nothing appears in Jira | Working as designed — failures write approval-gated DRAFTS to `test-output/ai/bug-drafts/` (open `index.html`) | Approve a draft to file it, or set `JIRA_AUTO_BUG=yes` for direct auto-filing |
+| Bug drafts empty / no Jira creds for filing | `environments/.env.jira` missing or wrong creds | Re-init with `--jira-url=... --jira-project=...` + fill in `JIRA_EMAIL` + `JIRA_TOKEN` |
 | `yarn aiqa:guard` rejects a generated spec | LLM produced non-conforming code | Either fix the file manually, or re-run `aiqa:generate-automation` (the builder has the reviewer in the loop) |
 | MCP server won't start in Claude Code | `@modelcontextprotocol/sdk` not installed | `yarn install` then restart the editor |
 
@@ -315,6 +317,6 @@ see `ci/README.md` for the cross-provider contract.
 - [README.md](README.md) — framework overview
 - [src/ai-qa-agent/README.md](src/ai-qa-agent/README.md) — agent architecture, modes, guardrails
 - [mcp/README.md](mcp/README.md) — MCP servers + project-extension convention
-- [helper/](helper/) — single-keyword layer, auth, Jira reporter
+- [ui/helpers/](ui/helpers/) — single-keyword layer, auth · [core/](core/) — base test, tags, Jira reporter + bug drafts
 - [ci/README.md](ci/README.md) — CI samples (Jenkins · GitHub Actions · GitLab CI) + the cross-provider contract
 - [ci/jenkins/regression-pipeline](ci/jenkins/regression-pipeline) — declarative pipeline (params, allure, email)

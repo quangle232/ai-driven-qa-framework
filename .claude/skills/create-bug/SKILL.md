@@ -5,10 +5,14 @@ description: File a Jira Bug on-demand for a real defect. Use for "create a bug"
 
 # create-bug — on-demand Jira bug (search-first, linked)
 
-Complements the automatic failure→bug reporter (which fires on FINAL-attempt failures);
-this is the **user-triggered** path for a defect you found.
+Complements the automatic failure→**bug-DRAFT** writer (final-attempt failures write
+approval-gated drafts to `test-output/ai/bug-drafts/` — JSON + HTML, see `index.html`);
+this skill is the **user-triggered / approval** path that actually files a bug.
 
 ## Steps
+0. **Pending drafts first** — if `test-output/ai/bug-drafts/` has drafts, present them
+   (summary, story, repro, evidence link) and let the user approve/reject each; an approved
+   draft carries all the evidence below — skip to step 3 with its JSON.
 1. **Confirm it's a real defect** — not an environment issue or a flake. If unsure, re-run
    (see **flaky-triage**); a pass-on-retry is NOT a bug. Only deterministic failures qualify.
 2. **Verify UI defects with evidence** — capture a screenshot + the relevant DOM (Playwright MCP)

@@ -4,7 +4,8 @@ A reusable **Playwright + TypeScript** QA framework starter: Page Object Model +
 `ActionKeyword` interaction layer across **UI · API · gRPC · mobile**, an AI **qa-agent**
 skill (Jira story → cases → code →
 run → report), **4 read-first MCP servers**, regression + bug **HTML/DOCX** report
-generators, a framework-wide failure → Jira-bug reporter, and sample CI pipelines
+generators, a framework-wide failure → Jira bug reporter (approval-gated DRAFTS by default;
+`JIRA_AUTO_BUG=yes` to auto-file), and sample CI pipelines
 (Jenkins · GitHub Actions · GitLab CI).
 
 > Drop this into any web project. Nothing here is tied to a specific app — `ui/tests/`,
@@ -63,7 +64,7 @@ Read-only by default. Regenerate config: `yarn aiqa:mcp:config`; catalogue: `yar
 - `ui/` — Playwright web: `ui/page-objects/`, `helpers/action-keywords.ts` (single keyword layer), `tests/`, `ui/test-data/`, `api-support.ts` (API to support web tests)
 - `api/` — Playwright-free clients under the Playwright runner: `rest/` (axios), `grpc/`, `graphql/` — client/service-object model, never the transport in a spec
 - `mobile/` — Appium native + Playwright mobile-web · `performance/` — k6 + JMeter
-- `core/` — shared: env, `test-tags.ts`, base `test.ts` (Jira-bug fixture), jira reporter — via `@core/*`
+- `core/` — shared: env, `test-tags.ts`, base `test.ts` (failure → bug-DRAFT fixture; `JIRA_AUTO_BUG=yes` files directly), jira reporter + `jira/bug-draft-writer.ts` (drafts → `test-output/ai/bug-drafts/`) — via `@core/*`
 - Imports use aliases `@core/* @ui/* @api/* @mobile/*`; run one module: `playwright test -c <module>/playwright.config.ts`
 - Auth/setup: `ui/helpers/global-setup.ts` + `ui/helpers/auth-config.ts`; storage states in `.auth/`
 - Config: `config/playwright.config.ts` · AI agent: `src/ai-qa-agent/` · MCP: `mcp/`

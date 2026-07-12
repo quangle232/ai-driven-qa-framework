@@ -2,10 +2,10 @@
 
 A reusable starter kit for a UI test-automation suite — **Playwright +
 TypeScript**, Page Object Model, a single ActionKeyword layer, a
-framework-wide failure → Jira-bug auto-reporter, and an **AI QA Agent
-layer** that generates Playwright code from test cases, scans failures
-during runs, and exposes its data to any LLM client (Claude Code,
-Cursor, …) via MCP servers.
+framework-wide failure → Jira bug reporter (approval-gated drafts by
+default), and an **AI QA Agent layer** that generates Playwright code
+from test cases, scans failures during runs, and exposes its data to any
+LLM client (Claude Code, Cursor, …) via MCP servers.
 
 Clone this repo, fill in three or four project-specific files (login flow,
 env URLs, Jira credentials), and you have a CI-ready test suite for any web
@@ -31,7 +31,7 @@ app.
 | 📦 **Page Object Model** | `BasePage` + per-screen classes. Locators grouped, methods call `ActionKeyword` only. UI change → fix in one class. |
 | ⚙️ **Single ActionKeyword layer** | The only file that touches the Playwright API. Async-safe getters, self-healing locators (`data-zcqa` → `data-test-id` → `data-id` → `data-title`), iframe helpers, reload-poll. |
 | 🪶 **Stakeholder-friendly errors** | Raw Playwright timeouts → `"Step failed: could not click option \"X\" — not visible within 15s"`. Selector kept as a debug hint on a second line. |
-| 🐞 **Auto bug on FINAL failure** | A test that fails ALL retries triggers a Jira Bug, linked to the parent user story (`setJiraStory(...)`). Search-first dedupe → no spam, reuses existing OPEN bugs across runs. Flaky tests (passed-on-retry) never create a bug. |
+| 🐞 **Bug DRAFTS on FINAL failure (approval-gated)** | A test that fails ALL retries writes a bug **draft** — JSON + a self-contained HTML page (repro command, error, embedded screenshots) in `test-output/ai/bug-drafts/` — linked to the parent story (`setJiraStory(...)`). A human approves before anything reaches Jira; set `JIRA_AUTO_BUG=yes` to restore direct auto-filing (search-first dedupe, reuses OPEN bugs). Flaky tests (passed-on-retry) never draft a bug. |
 | ⚡ **Parallel execution** | `--workers 1–10`. Workers share `storageState`. Build time drops 5–10×. |
 | 👻 **Headless by default** | CI runs headless; `HEADED` flips to headed for debugging. |
 | 🎞️ **Trace · video · screenshot** | Playwright auto-retains all three on failure → `trace.zip` opens in the Inspector for time-travel debugging. |

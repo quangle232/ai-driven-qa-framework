@@ -23,7 +23,8 @@ Turn `test-output/` into a report + actionable failure analysis.
    a concrete fix step, distinguishing **env/flaky** (re-run, stabilize wait) from **product**
    (real defect → suggest a Jira bug). Never claim a flake is a defect.
 4. **Allure report:** `yarn allure:report` (interactive) or `yarn allure:single` (one file).
-5. Point to the stakeholder HTML: `test-output/ai/test-report.html`; bug docs from `report:bugs`.
+5. Point to the stakeholder HTML: `test-output/ai/test-report.html`; bug docs from `report:bugs`;
+   pending bug DRAFTS at `test-output/ai/bug-drafts/index.html` (approve via **create-bug**).
 
 ## Rules
 - Distinguish environment failures from real defects before recommending a bug (see LESSONS-LEARNED).

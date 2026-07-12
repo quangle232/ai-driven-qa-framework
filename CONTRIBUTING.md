@@ -31,11 +31,11 @@ mcp/                    ← four read-only-by-default MCP servers
   shared/               ← policy + server-base + result helpers
   servers/{qa-report,framework-context,memory,test-runner}/
 
-helper/                 ← framework-provided helpers used by every project
-  test.ts               ← extended `test` with Jira-bug auto-fixture (don't touch in projects)
-  jira-bug-reporter.ts  ← framework infrastructure (don't touch in projects)
-  jira-story.ts
+core/                   ← shared spine used by every module (@core/*)
+  test.ts               ← extended `test` with the failure → bug-draft fixture (don't touch in projects)
+  jira/                 ← jira-bug-reporter · jira-story · bug-draft-writer (framework infrastructure)
   test-tags.ts          ← starter tags; projects EXTEND this
+ui/helpers/             ← web helpers per project
   action-keywords.ts    ← single keyword layer; projects can extend
 
 config/                 ← playwright.config.ts (framework default; projects rarely change)
@@ -92,8 +92,8 @@ ci/                     ← sample CI pipelines: jenkins/, github-actions/, gitl
 ## Updating framework conventions
 
 `src/ai-qa-agent/context/framework-context.ts` builds the cached prompt
-block from real source files in this repo (helper, page-objects/sample,
-tests/sample, .claude/skills/qa-agent/references/framework-conventions.md).
+block from real source files in this repo (core, ui/helpers, ui/page-objects/sample,
+ui/tests, .claude/skills/qa-agent/references/framework-conventions.md).
 
 To change a convention:
 

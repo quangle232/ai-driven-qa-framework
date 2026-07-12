@@ -221,10 +221,11 @@ test('create item via UI', tags(TAGS.REGRESSION, TAGS.ITEMS, TAGS.P0), async ({ 
 Beyond UI, the framework tests REST, gRPC, and mobile — all on the SAME
 Playwright runner, each mirroring POM's "object model + single keyword layer":
 
-- **API** (`api/rest/tests`, import `api/rest/helpers/test-api`): call `api/services/*`
-  (Service-Object Model), never the raw client. `api/clients/api-client.ts` is the
-  only HTTP layer; validate responses with the `zod` models in `api/models`.
-  Mocks: MSW (node-`fetch` specs) + the Express server (Playwright-`request` specs).
+- **API** (`api/rest/tests`, import `api/rest/helpers/test-api`): call `api/rest/services/*`
+  (Service-Object Model), never the raw client. `api/rest/clients/rest-client.ts` (axios,
+  Playwright-free) is the only HTTP layer; validate responses with the `zod` models in
+  `api/rest/models`. Mocks: MSW + the Express standalone server (`yarn mock:api`).
+  GraphQL: `api/graphql/client.ts` + `operations.ts`, msw mock.
 - **gRPC** (`api/grpc/tests`, import `api/grpc/helpers/test-grpc`): call `api/grpc/clients/*`,
   set a deadline on every call, assert gRPC STATUS CODES (not just payloads),
   auth via metadata. The mock implements `api/grpc/proto`.
@@ -232,7 +233,7 @@ Playwright runner, each mirroring POM's "object model + single keyword layer":
   Screen Objects + `MobileActionKeyword` (accessibility-id-first) and is
   skip-gated; mobile-web (`mobile/tests`) reuses the web POM.
 
-Tags: `@api` / `@grpc` / `@mobile` (+ `@mobile-web` / `@mobile-native`) on top of
-`@regression`. Do NOT generate into `api/contracts/` or `api/grpc/proto/` (contracts
+Tags: `@api` / `@grpc` / `@graphql` / `@mobile` (+ `@mobile-web` / `@mobile-native`) on top
+of `@regression`. Do NOT generate into `api/rest/contracts/` or `api/grpc/proto/` (contracts
 are source-of-truth and patch-guarded). Full rules: `api/README.md`,
-`grpc/README.md`, `mobile/README.md`.
+`api/grpc/README.md`, `mobile/README.md`.

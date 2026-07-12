@@ -20,7 +20,7 @@ flowchart TD
     C1 --> C2["🔧 Install tools &amp; deps<br/>NodeJS · yarn install<br/>npx playwright install"]
 
     %% ── 3. Global setup (auth) ─────────────────────────────
-    subgraph GS["🔐 Global setup — one-time auth (helper/authenticate-set-up.ts)"]
+    subgraph GS["🔐 Global setup — one-time auth (ui/helpers/authenticate-set-up.ts)"]
         direction TB
         GS1["Launch Chromium<br/>(headed)"] --> GS2["Sign in to the SUT<br/>email → password"]
         GS2 --> GS3{"2FA / OTP<br/>prompted?"}
@@ -123,7 +123,7 @@ then installs the Node toolchain plus Playwright's browsers. Clean every
 build — no state leaks from the previous run.
 
 ### 3. Global setup — one-time authentication
-File: `helper/authenticate-set-up.ts` (called by `helper/global-setup.ts`).
+File: `ui/helpers/authenticate-set-up.ts` (called by `ui/helpers/global-setup.ts`).
 
 This is the **only** time the suite logs in to the SUT. It happens **once per
 build**, in a real Chromium browser (headed on purpose — if the SUT prompts for
@@ -186,10 +186,10 @@ Jenkins ends with one of three states:
 | Codex trigger script | `.agents/skills/qa-agent/scripts/trigger-jenkins.js` |
 | Jenkins pipeline | `ci/jenkins/regression-pipeline` |
 | Stats summary for the e-mail | `ci/jenkins/scripts/collect-playwright-stats.js` |
-| Global setup | `helper/global-setup.ts` |
-| Authentication | `helper/authenticate-set-up.ts` |
-| Desk login | `page-objects/sut/login-page.ts` |
-| CRM warm-up | `page-objects/sut-crm/crm-login-page.ts` |
-| Action keyword layer (incl. friendly errors) | `helper/action-keywords.ts` |
-| Tag map | `helper/test-tags.ts` |
+| Global setup | `ui/helpers/global-setup.ts` |
+| Authentication | `ui/helpers/authenticate-set-up.ts` |
+| Desk login | `ui/page-objects/<app>/login-page.ts` (project-specific) |
+| CRM warm-up | `ui/page-objects/<app>-crm/crm-login-page.ts` (project-specific) |
+| Action keyword layer (incl. friendly errors) | `ui/helpers/action-keywords.ts` |
+| Tag map | `core/test-tags.ts` |
 | Playwright config (uses `storageState`) | `config/playwright.config.ts` |
